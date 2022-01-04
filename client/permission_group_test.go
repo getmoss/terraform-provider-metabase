@@ -12,7 +12,7 @@ func TestPermissionGroups(t *testing.T) {
 	if baseUrl == "" || username == "" || password == "" {
 		t.Fatal("baseUrl, username, password must be set")
 	}
-	c, _ := NewClient(baseUrl, username, password)
+	c, _ := NewClient(baseUrl, username, password, "test")
 	var createdGroupId int
 
 	t.Run("Get PermissionGroups", func(t *testing.T) {

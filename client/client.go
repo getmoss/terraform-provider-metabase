@@ -15,9 +15,10 @@ type Client struct {
 	BaseURL    string
 	sessionId  string
 	HTTPClient *http.Client
+	userAgent  string
 }
 
-func NewClient(baseURL, username, password string) (*Client, error) {
+func NewClient(baseURL, username, password, userAgent string) (*Client, error) {
 	log.Printf("[INFO] Creating new client for host '%s'", baseURL)
 	httpClient := &http.Client{
 		Timeout: time.Minute,
@@ -53,6 +54,7 @@ func NewClient(baseURL, username, password string) (*Client, error) {
 		BaseURL:    baseURL,
 		sessionId:  loginResponse.Id,
 		HTTPClient: httpClient,
+		userAgent:  userAgent,
 	}, nil
 }
 

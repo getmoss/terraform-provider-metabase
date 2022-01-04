@@ -1,6 +1,6 @@
-resource "metabase_permission_group" "example" {
-    name = "created-from-resource"
-}
+// resource "metabase_permission_group" "example" {
+//     name = "created-from-resource"
+// }
 
 data "metabase_permission_group" "read_example" {
     id = 1
