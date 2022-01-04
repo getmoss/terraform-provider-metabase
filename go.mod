@@ -1,4 +1,4 @@
-module github.com/hashicorp/terraform-provider-scaffolding
+module terraform-provider-metabase
 
 go 1.15
 

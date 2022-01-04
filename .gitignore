@@ -33,3 +33,11 @@ website/vendor
 
 # Keep windows files with windows line endings
 *.winfile eol=crlf
+
+.env
+
+vendor/
+plan
+
+# secret file
+local.tfvars
