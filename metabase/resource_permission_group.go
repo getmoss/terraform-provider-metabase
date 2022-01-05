@@ -135,7 +135,23 @@ func resourcePermissionGroupRead(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourcePermissionGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return nil
+	c := meta.(*client.Client)
+
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
+	id := d.Get("group_id").(int)
+
+	err := c.DeletePermissionGroup(id)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// d.SetId("") is automatically called assuming delete returns no errors, but
+	// it is added here for explicitness.
+	d.SetId("")
+
+	return diags
 }
 
 func resourcePermissionGroupImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
