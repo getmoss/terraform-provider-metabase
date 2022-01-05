@@ -4,9 +4,9 @@ import (
 	"context"
 	"flag"
 	"log"
+	"terraform-provider-metabase/metabase"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"github.com/hashicorp/terraform-provider-scaffolding/internal/provider"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -34,11 +34,11 @@ func main() {
 	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
-	opts := &plugin.ServeOpts{ProviderFunc: provider.New(version)}
+	opts := &plugin.ServeOpts{ProviderFunc: metabase.New(version)}
 
 	if debugMode {
 		// TODO: update this string with the full name of your provider as used in your configs
-		err := plugin.Debug(context.Background(), "registry.terraform.io/hashicorp/scaffolding", opts)
+		err := plugin.Debug(context.Background(), "github.com/getmoss/metabase", opts)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
