@@ -3,6 +3,7 @@ package metabase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"terraform-provider-metabase/client"
 	"time"
@@ -27,28 +28,63 @@ func resourcePermissionGroup() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			// "id": {
-			// 	Type:     schema.TypeInt,
-			// 	Computed: true,
-			// },
+			"group_id": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 		},
-		UseJSONNumber: true,
 	}
 }
 
 func resourcePermissionGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return nil
+	c := meta.(*client.Client)
+
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
+	name := d.Get("name").(string)
+	groupId := d.Get("group_id").(int)
+
+	if groupId != 0 {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "group_id is not empty",
+			Detail:   "group_id cannot be specified",
+		})
+		return diags
+	}
+
+	// Create the permission group
+	pg, err := c.CreatePermissionGroup(name)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Error creating Permission Group '%s'", name),
+			Detail:   "Could not create Permission Group, unexpected error: " + err.Error(),
+		})
+		return diags
+	}
+
+	d.SetId(strconv.Itoa(pg.Id))
+	if err := d.Set("group_id", pg.Id); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("name", pg.Name); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return diags
 }
 
 func resourcePermissionGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 	name := d.Get("name").(string)
-	id := d.Get("id").(int)
+	id := d.Get("group_id").(int)
 
 	var diags diag.Diagnostics
 
@@ -88,7 +124,7 @@ func resourcePermissionGroupRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	d.SetId(strconv.Itoa(pg.Id))
-	if err := d.Set("id", pg.Id); err != nil {
+	if err := d.Set("group_id", pg.Id); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("name", pg.Name); err != nil {
