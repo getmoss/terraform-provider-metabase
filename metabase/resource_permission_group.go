@@ -2,7 +2,6 @@ package metabase
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"terraform-provider-metabase/client"
@@ -19,7 +18,7 @@ func resourcePermissionGroup() *schema.Resource {
 		DeleteContext: resourcePermissionGroupDelete,
 
 		Importer: &schema.ResourceImporter{
-			State: resourcePermissionGroupImport,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -152,11 +151,4 @@ func resourcePermissionGroupDelete(ctx context.Context, d *schema.ResourceData, 
 	d.SetId("")
 
 	return diags
-}
-
-func resourcePermissionGroupImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if diag := resourcePermissionGroupRead(context.Background(), d, meta); diag.HasError() {
-		return nil, errors.New("error resourcePermissionGroupImport")
-	}
-	return []*schema.ResourceData{d}, nil
 }

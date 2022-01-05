@@ -3,9 +3,13 @@
 // }
 
 data "metabase_permission_group" "read_example" {
-    group_id = 1
+  group_id = 1
 }
 
 output "read_example_name" {
-    value = "${data.metabase_permission_group.read_example.name}"
+  value = data.metabase_permission_group.read_example.name
+}
+
+resource "metabase_permission_group" "import_test" {
+  name = "Administrators"
 }
