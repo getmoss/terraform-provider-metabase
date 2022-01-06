@@ -64,6 +64,7 @@ func NewClient(l LoginDetails) (LoginSuccess, error) {
 	}
 
 	if sessionId == "" { // Login with username/password
+		log.Printf("[DEBUG] Logging in with username/password")
 		creds := map[string]string{"username": l.Username, "password": l.Password}
 		b := new(bytes.Buffer)
 		json.NewEncoder(b).Encode(creds)

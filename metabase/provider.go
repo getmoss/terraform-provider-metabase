@@ -51,6 +51,13 @@ func New(version string) func() *schema.Provider {
 					Required:    true,
 					Sensitive:   true,
 				},
+				"session_id": {
+					Type:        schema.TypeString,
+					Description: "Session ID",
+					Computed:    true,
+					Sensitive:   true,
+					Optional:    true,
+				},
 			},
 		}
 
@@ -62,19 +69,13 @@ func New(version string) func() *schema.Provider {
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		sessionIdKey := "sessionId"
+		sessionIdKey := "session_id"
 		// Setup a User-Agent for your API client (replace the provider name for yours):
 		userAgent := p.UserAgent("terraform-provider-metabase", version)
 		username := d.Get("username").(string)
 		password := d.Get("password").(string)
 		host := d.Get("host").(string)
-		var sessionId string
-
-		m := d.State().Meta
-
-		if v, ok := m[sessionIdKey]; ok {
-			sessionId = v.(string)
-		}
+		sessionId := d.Get(sessionIdKey).(string)
 
 		// Warning or errors can be collected in a slice type
 		var diags diag.Diagnostics
@@ -100,7 +101,7 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}
-		d.State().Meta[sessionIdKey] = ls.SessionId
+		d.Set(sessionIdKey, ls.SessionId)
 
 		return ls.Client, diags
 	}
