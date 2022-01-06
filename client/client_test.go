@@ -5,14 +5,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/hashicorp/go-uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLogin(t *testing.T) {
 	t.Run("1st time login", func(t *testing.T) {
-		expected := "f4a53a0e-b1c9-4dda-a5b9-d3dce5caa959"
-		svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `{ "id": "%s" }`, expected)
-		}))
+		sessionId, _ := uuid.GenerateUUID()
+		mux := http.NewServeMux()
+		mux.HandleFunc("/api/session", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `{ "id": "%s" }`, sessionId)
+		})
+		svr := httptest.NewServer(mux)
 		defer svr.Close()
 
 		l := LoginDetails{
@@ -25,23 +30,59 @@ func TestLogin(t *testing.T) {
 
 		success, err := NewClient(l)
 
-		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
-		}
-		if success.Client == nil {
-			t.Fatalf("client is nil")
-		}
-
-		if success.SessionId != expected {
-			t.Fatalf("unexpected session id: '%s'", success.SessionId)
-		}
+		assert.Nil(t, err)
+		assert.NotNil(t, success.Client)
+		assert.Equal(t, sessionId, success.SessionId)
 	})
 
 	t.Run("Re-use sessionId", func(t *testing.T) {
+		sessionId, _ := uuid.GenerateUUID()
+		mux := http.NewServeMux()
+		mux.HandleFunc("/api/user/current", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `{ "id": 1 }`)
+		})
+		svr := httptest.NewServer(mux)
+		defer svr.Close()
 
+		l := LoginDetails{
+			Host:      svr.URL,
+			Username:  "irrelevant",
+			Password:  "irrelevant",
+			SessionId: sessionId,
+			UserAgent: "test",
+		}
+
+		success, err := NewClient(l)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, success.Client)
+		assert.Equal(t, sessionId, success.SessionId)
 	})
 
 	t.Run("Login with username/password on expired sessionId", func(t *testing.T) {
+		sessionId, _ := uuid.GenerateUUID()
+		mux := http.NewServeMux()
+		mux.HandleFunc("/api/user/current", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+		mux.HandleFunc("/api/session", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `{ "id": "%s" }`, sessionId)
+		})
+		svr := httptest.NewServer(mux)
+		defer svr.Close()
 
+		l := LoginDetails{
+			Host:      svr.URL,
+			Username:  "user",
+			Password:  "pass",
+			SessionId: sessionId,
+			UserAgent: "test",
+		}
+
+		success, err := NewClient(l)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, success.Client)
+		assert.Equal(t, sessionId, success.SessionId)
 	})
 }

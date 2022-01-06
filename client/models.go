@@ -12,11 +12,3 @@ type PermissionGroups []struct {
 	Name        string `json:"name"`
 	MemberCount int    `json:"member_count"`
 }
-
-type LoginResponse struct {
-	Id string `json:"id"`
-}
-
-type ErrorResponse struct {
-	Errors map[string]string `json:"errors"`
-}
