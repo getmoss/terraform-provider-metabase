@@ -12,13 +12,13 @@ func dataSourcePermissionGroup() *schema.Resource {
 		ReadContext: dataSourcePermissionGroupRead,
 
 		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "Group Id. At least one of `id` or `name` must be specified.",
+			"group_id": {
+				Description: "Group Id. At least one of `group_id` or `name` must be specified.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
 			"name": {
-				Description: "Group Name. At least one of `id` or `name` must be specified.",
+				Description: "Group Name. At least one of `group_id` or `name` must be specified.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

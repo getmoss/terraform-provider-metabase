@@ -60,6 +60,7 @@ func NewClient(baseURL, username, password, userAgent string) (*Client, error) {
 
 func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 	req.Header.Set("X-Metabase-Session", c.sessionId)
+	req.Header.Set("User-Agent", c.userAgent)
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return err

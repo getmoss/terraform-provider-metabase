@@ -39,7 +39,6 @@ func (c *Client) GetPermissionGroup(id int) (PermissionGroup, error) {
 }
 
 func (c *Client) CreatePermissionGroup(name string) (PermissionGroup, error) {
-	log.Printf("[INFO] Creating new permission group '%s'", name)
 	url := fmt.Sprintf("%s/api/permissions/group", c.BaseURL)
 	pg := PermissionGroup{Name: name}
 	b := new(bytes.Buffer)
@@ -67,5 +66,6 @@ func (c *Client) DeletePermissionGroup(id int) error {
 		return err
 	}
 
+	log.Printf("[INFO] Deleted permissionGroup with id[%d]", id)
 	return nil
 }
