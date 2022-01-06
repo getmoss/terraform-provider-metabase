@@ -12,3 +12,12 @@ type PermissionGroups []struct {
 	Name        string `json:"name"`
 	MemberCount int    `json:"member_count"`
 }
+
+type User struct {
+	Id    int    `json:"id"`
+	Email string `json:"email"`
+}
+
+type Users struct {
+	Data []User `json:"data"`
+}
