@@ -12,7 +12,17 @@ func TestPermissionGroups(t *testing.T) {
 	if baseUrl == "" || username == "" || password == "" {
 		t.Fatal("baseUrl, username, password must be set")
 	}
-	c, _ := NewClient(baseUrl, username, password, "test")
+
+	l := LoginDetails{
+		Host:      baseUrl,
+		Username:  username,
+		Password:  password,
+		SessionId: "",
+		UserAgent: "test",
+	}
+
+	success, _ := NewClient(l)
+	c := success.Client
 	var createdGroupId int
 
 	t.Run("Get PermissionGroups", func(t *testing.T) {
@@ -34,10 +44,10 @@ func TestPermissionGroups(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if group.ID == 0 {
+		if group.Id == 0 {
 			t.Fatal("group id is zero")
 		}
-		createdGroupId = group.ID
+		createdGroupId = group.Id
 	})
 
 	t.Run("Get PermissionGroup", func(t *testing.T) {
@@ -47,7 +57,7 @@ func TestPermissionGroups(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if group.ID == 0 || group.Name == "" {
+		if group.Id == 0 || group.Name == "" {
 			t.Fatal("Get PermissionGroup failed")
 		}
 	})
@@ -55,7 +65,7 @@ func TestPermissionGroups(t *testing.T) {
 	t.Run("Delete PermissionGroup", func(t *testing.T) {
 		group, _ := c.GetPermissionGroup(createdGroupId)
 
-		err := c.DeletePermissionGroup(group.ID)
+		err := c.DeletePermissionGroup(group.Id)
 
 		if err != nil {
 			t.Fatal(err)
@@ -63,7 +73,7 @@ func TestPermissionGroups(t *testing.T) {
 
 		group, _ = c.GetPermissionGroup(createdGroupId)
 
-		if group.ID != 0 {
+		if group.Id != 0 {
 			t.Fatal("Delete PermissionGroup failed")
 		}
 	})
