@@ -13,48 +13,93 @@ import (
 
 type Client struct {
 	BaseURL    string
-	sessionId  string
 	HTTPClient *http.Client
-	userAgent  string
+
+	sessionId string
+	userAgent string
 }
 
-func NewClient(baseURL, username, password, userAgent string) (*Client, error) {
-	log.Printf("[INFO] Creating new client for host '%s'", baseURL)
+type LoginDetails struct {
+	Host      string
+	Username  string
+	Password  string
+	SessionId string
+	UserAgent string
+}
+
+type LoginSuccess struct {
+	Client    *Client
+	SessionId string
+}
+
+type LoginResponse struct {
+	Id string `json:"id"`
+}
+
+type ErrorResponse struct {
+	Errors map[string]string `json:"errors"`
+}
+
+func NewClient(l LoginDetails) (LoginSuccess, error) {
+	log.Printf("[INFO] Creating new client for host '%s'", l.Host)
 	httpClient := &http.Client{
 		Timeout: time.Minute,
 	}
+	var sessionId string
 
-	// Login
-	creds := map[string]string{"username": username, "password": password}
-	b := new(bytes.Buffer)
-	json.NewEncoder(b).Encode(creds)
-
-	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/session", baseURL), b)
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := httpClient.Do(req)
-	if err != nil {
-		log.Panicf("[ERROR] Error in authentication: %s", err)
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusBadRequest {
-		var errRes ErrorResponse
-		if err = json.NewDecoder(res.Body).Decode(&errRes); err == nil {
-			log.Panicf("[ERROR] Error in request[%+v]: Got response[status=%+v, username=%s]", req.URL, res.Status, username)
+	// Re-use existing sessionId if possible
+	if l.SessionId != "" {
+		log.Printf("[DEBUG] Checking if existing sessionId is valid")
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/user/current", l.Host), nil)
+		res, err := httpClient.Do(req)
+		if err != nil {
+			log.Printf("[WARN] Error fetching current user: %s", err)
 		}
-		log.Panicf("[ERROR] unknown error, status code: %d", res.StatusCode)
+		defer res.Body.Close()
+
+		if res.StatusCode == http.StatusOK {
+			// Session Id is valid
+			sessionId = l.SessionId
+		}
 	}
 
-	var loginResponse LoginResponse
-	json.NewDecoder(res.Body).Decode(&loginResponse)
+	if sessionId == "" { // Login with username/password
+		log.Printf("[DEBUG] Logging in with username/password")
+		creds := map[string]string{"username": l.Username, "password": l.Password}
+		b := new(bytes.Buffer)
+		json.NewEncoder(b).Encode(creds)
 
-	return &Client{
-		BaseURL:    baseURL,
-		sessionId:  loginResponse.Id,
-		HTTPClient: httpClient,
-		userAgent:  userAgent,
+		req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/session", l.Host), b)
+		req.Header.Set("Content-Type", "application/json")
+
+		res, err := httpClient.Do(req)
+		if err != nil {
+			log.Panicf("[ERROR] Error in authentication: %s", err)
+			return LoginSuccess{}, err
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusBadRequest {
+			var errRes ErrorResponse
+			if err = json.NewDecoder(res.Body).Decode(&errRes); err == nil {
+				log.Panicf("[ERROR] Error in request[%+v]: Got response[status=%+v, username=%s]", req.URL, res.Status, l.Username)
+			}
+			log.Panicf("[ERROR] unknown error, status code: %d", res.StatusCode)
+		}
+
+		var resp LoginResponse
+		json.NewDecoder(res.Body).Decode(&resp)
+		sessionId = resp.Id
+	}
+
+	return LoginSuccess{
+		Client: &Client{
+			BaseURL:    l.Host,
+			sessionId:  sessionId,
+			HTTPClient: httpClient,
+			userAgent:  l.UserAgent,
+		},
+		SessionId: sessionId,
 	}, nil
 }
 
