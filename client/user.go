@@ -23,6 +23,20 @@ func (c *Client) GetUsers() (Users, error) {
 	return users, nil
 }
 
+func (c *Client) GetUser(id int) (User, error) {
+	url := fmt.Sprintf("%s/api/user/%d", c.BaseURL, id)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	user := User{}
+	if err != nil {
+		return user, err
+	}
+	if err := c.sendRequest(req, &user); err != nil {
+		return user, err
+	}
+
+	return user, nil
+}
+
 func (c *Client) CreateUser(u User) (User, error) {
 	url := fmt.Sprintf("%s/api/user", c.BaseURL)
 	req, err := http.NewRequest(http.MethodPost, url, nil)
@@ -51,8 +65,8 @@ func (c *Client) UpdateUser(u User) (User, error) {
 	return created, nil
 }
 
-func (c *Client) DeleteUser(u User) (DeleteSuccess, error) {
-	url := fmt.Sprintf("%s/api/user/%d", c.BaseURL, u.Id)
+func (c *Client) DeleteUser(id int) (DeleteSuccess, error) {
+	url := fmt.Sprintf("%s/api/user/%d", c.BaseURL, id)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	resp := DeleteSuccess{}
 	if err != nil {

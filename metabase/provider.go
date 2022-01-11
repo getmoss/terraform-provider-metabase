@@ -29,9 +29,11 @@ func New(version string) func() *schema.Provider {
 		p := &schema.Provider{
 			DataSourcesMap: map[string]*schema.Resource{
 				"metabase_permission_group": dataSourcePermissionGroup(),
+				"metabase_users":            dataSourceUsers(),
 			},
 			ResourcesMap: map[string]*schema.Resource{
 				"metabase_permission_group": resourcePermissionGroup(),
+				"metabase_user":             resourceUser(),
 			},
 			Schema: map[string]*schema.Schema{
 				"host": {

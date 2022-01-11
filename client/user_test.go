@@ -41,6 +41,38 @@ func TestUser(t *testing.T) {
 		assert.Equal(t, expected, us)
 	})
 
+	t.Run("Get user by id", func(t *testing.T) {
+		userId := 1
+		expected := User{
+			Id:        userId,
+			Email:     "test@example.com",
+			FirstName: "John",
+			LastName:  "Doe",
+		}
+
+		mux := http.NewServeMux()
+		mux.HandleFunc(fmt.Sprintf("/api/user/%d", userId), func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case "GET":
+				json.NewEncoder(w).Encode(expected)
+			default:
+				w.WriteHeader(http.StatusBadRequest)
+			}
+		})
+		svr := httptest.NewServer(mux)
+		defer svr.Close()
+
+		c := Client{
+			BaseURL:    svr.URL,
+			HTTPClient: &http.Client{},
+		}
+
+		us, err := c.GetUser(userId)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, us)
+	})
+
 	t.Run("Create user", func(t *testing.T) {
 		userToBeCreated := User{
 			Email:     "test@example.com",
@@ -113,16 +145,11 @@ func TestUser(t *testing.T) {
 	})
 
 	t.Run("Delete user", func(t *testing.T) {
-		user := User{
-			Id:        1,
-			Email:     "test@example.com",
-			FirstName: "John",
-			LastName:  "Doe",
-		}
+		userId := 1
 		expected := DeleteSuccess{Success: true}
 
 		mux := http.NewServeMux()
-		mux.HandleFunc(fmt.Sprintf("/api/user/%d", user.Id), func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(fmt.Sprintf("/api/userId/%d", userId), func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
 			case "DELETE":
 				json.NewEncoder(w).Encode(expected)
@@ -138,7 +165,7 @@ func TestUser(t *testing.T) {
 			HTTPClient: &http.Client{},
 		}
 
-		us, err := c.DeleteUser(user)
+		us, err := c.DeleteUser(userId)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, us)
