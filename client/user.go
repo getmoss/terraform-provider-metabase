@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+type DeleteSuccess struct {
+	Success bool `json:"success"`
+}
+
 func (c *Client) GetUsers() (Users, error) {
 	url := fmt.Sprintf("%s/api/user", c.BaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -17,4 +21,47 @@ func (c *Client) GetUsers() (Users, error) {
 	}
 
 	return users, nil
+}
+
+func (c *Client) CreateUser(u User) (User, error) {
+	url := fmt.Sprintf("%s/api/user", c.BaseURL)
+	req, err := http.NewRequest(http.MethodPost, url, nil)
+	if err != nil {
+		return u, err
+	}
+	created := User{}
+	if err := c.sendRequest(req, &created); err != nil {
+		return u, err
+	}
+
+	return created, nil
+}
+
+func (c *Client) UpdateUser(u User) (User, error) {
+	url := fmt.Sprintf("%s/api/user", c.BaseURL)
+	req, err := http.NewRequest(http.MethodPut, url, nil)
+	if err != nil {
+		return u, err
+	}
+	created := User{}
+	if err := c.sendRequest(req, &created); err != nil {
+		return u, err
+	}
+
+	return created, nil
+}
+
+func (c *Client) DeleteUser(u User) (DeleteSuccess, error) {
+	url := fmt.Sprintf("%s/api/user/%d", c.BaseURL, u.Id)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	resp := DeleteSuccess{}
+	if err != nil {
+		return resp, err
+	}
+
+	if err := c.sendRequest(req, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
 }
