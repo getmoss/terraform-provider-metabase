@@ -103,20 +103,10 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 	firstName := d.Get("first_name").(string)
 	lastName := d.Get("last_name").(string)
 	email := d.Get("email").(string)
-	userId := d.Get("user_id").(int)
 	u := client.User{
 		FirstName: firstName,
 		LastName:  lastName,
 		Email:     email,
-	}
-
-	if userId != 0 {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "user_id is not empty",
-			Detail:   "user_id cannot be specified",
-		})
-		return diags
 	}
 
 	// Create the user
@@ -221,7 +211,7 @@ func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interfac
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	id := d.Get("group_id").(int)
+	id := d.Get("user_id").(int)
 
 	_, err := c.DeleteUser(id)
 	if err != nil {

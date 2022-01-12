@@ -1,6 +1,8 @@
 package client
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -42,7 +44,10 @@ func (c *Client) GetUser(id int) (User, error) {
 
 func (c *Client) CreateUser(u User) (User, error) {
 	url := fmt.Sprintf("%s/api/user", c.BaseURL)
-	req, err := http.NewRequest(http.MethodPost, url, nil)
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(u)
+	req, err := http.NewRequest(http.MethodPost, url, b)
+	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return u, err
 	}
@@ -57,7 +62,10 @@ func (c *Client) CreateUser(u User) (User, error) {
 
 func (c *Client) UpdateUser(u User) (User, error) {
 	url := fmt.Sprintf("%s/api/user", c.BaseURL)
-	req, err := http.NewRequest(http.MethodPut, url, nil)
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(u)
+	req, err := http.NewRequest(http.MethodPut, url, b)
+	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return u, err
 	}
