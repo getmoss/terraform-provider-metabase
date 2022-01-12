@@ -19,6 +19,12 @@ There are a bunch of structs in the SDK that you have to provide implementations
 3. To add a `data source`, implement [Resource](https://pkg.go.dev/github.com/hashicorp/terraform/helper/schema#Resource), same as `resource` above. For a data type, 2 methods are required:
     * `Schema` returns the supported fields.
     * `ReadContext` that reads the resource from the API. This can delegate to the `ReadContext` of the `resource`.
+4. It's practical & a convention to create a client instead of directly handling HTTP in the provider. This helps with testing the client as well.
+
+### Adding a new resource
+1. Add User CRUD methods for the `client` with tests.
+2. Add `resource` & `data` definitions to the provider using the client.
+3. Manual testing with the `examples/resources.tf` file & code adjustment as necessary.
 
 #### To test
 * `alias tf=terraform`
