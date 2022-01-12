@@ -3,12 +3,10 @@ package metabase
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"terraform-provider-metabase/client"
-	"time"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"strconv"
+	"terraform-provider-metabase/client"
 )
 
 func resourcePermissionGroup() *schema.Resource {
@@ -19,11 +17,6 @@ func resourcePermissionGroup() *schema.Resource {
 
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
-		},
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(1 * time.Minute),
-			Delete: schema.DefaultTimeout(1 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{

@@ -3,13 +3,11 @@ package metabase
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"strconv"
 	"terraform-provider-metabase/client"
-	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceUser() *schema.Resource {
@@ -21,11 +19,6 @@ func resourceUser() *schema.Resource {
 
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
-		},
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(1 * time.Minute),
-			Delete: schema.DefaultTimeout(1 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -139,8 +132,10 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 
 func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
+
+	id := getIdForRead(d)
+
 	email := d.Get("email").(string)
-	id := d.Get("user_id").(int)
 
 	var diags diag.Diagnostics
 
@@ -203,6 +198,14 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	return diags
+}
+
+func getIdForRead(d *schema.ResourceData) int {
+	id, err := strconv.Atoi(d.Id()) // Used for import
+	if err != nil || id == 0 {
+		return d.Get("user_id").(int) // Used for data source
+	}
+	return id
 }
 
 func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

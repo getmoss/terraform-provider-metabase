@@ -45,9 +45,9 @@ output "user_by_id" {
 
 # Imported with `TF_LOG=debug tf import -var-file=local.tfvars metabase_user.imported 21`
 resource "metabase_user" "imported" {
-  email = "moritz.kronberger@getmoss.com"
+  email      = "moritz.kronberger@getmoss.com"
   first_name = "Moritz"
-  last_name = "Kronberger"
+  last_name  = "Kronberger"
 }
 
 output "imported_user" {
