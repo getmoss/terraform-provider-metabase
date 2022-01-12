@@ -3,6 +3,7 @@ package metabase
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"terraform-provider-metabase/client"
 	"time"
@@ -15,6 +16,7 @@ func resourceUser() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceUserCreate,
 		ReadContext:   resourceUserRead,
+		UpdateContext: resourceUserUpdate,
 		DeleteContext: resourceUserDelete,
 
 		Importer: &schema.ResourceImporter{
@@ -45,6 +47,51 @@ func resourceUser() *schema.Resource {
 			},
 		},
 	}
+}
+
+func resourceUserUpdate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	c := meta.(*client.Client)
+
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
+	firstName := d.Get("first_name").(string)
+	lastName := d.Get("last_name").(string)
+	email := d.Get("email").(string)
+	userId := d.Get("user_id").(int)
+	u := client.User{
+		Id:        userId,
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+	}
+
+	// Update the user
+	updated, err := c.UpdateUser(u)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Error updating User '%s'", email),
+			Detail:   "Could not update User, unexpected error: " + err.Error(),
+		})
+		return diags
+	}
+
+	d.SetId(strconv.Itoa(updated.Id))
+	if err := d.Set("first_name", updated.FirstName); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("last_name", updated.LastName); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("email", updated.Email); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("user_id", updated.Id); err != nil {
+		return diag.FromErr(err)
+	}
+
+	return diags
 }
 
 func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -124,6 +171,7 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 
 	if (user == client.User{}) {
 		// fetch all users and find the one with the given email
+		log.Printf("[INFO] Finding user by email '%s'", email)
 		users, err := c.GetUsers()
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
@@ -134,10 +182,19 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 			return diags
 		}
 		for _, i := range users.Data {
-			if user.Email == email {
+			if i.Email == email {
 				user = i
 				break
 			}
+		}
+
+		if (user == client.User{}) {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error reading user",
+				Detail:   fmt.Sprintf("Could not read user with email '%s'", email),
+			})
+			return diags
 		}
 	}
 
@@ -151,7 +208,7 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 	if err := d.Set("last_name", user.LastName); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("email", user.LastName); err != nil {
+	if err := d.Set("email", user.Email); err != nil {
 		return diag.FromErr(err)
 	}
 

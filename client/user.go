@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -20,6 +21,7 @@ func (c *Client) GetUsers() (Users, error) {
 		return users, err
 	}
 
+	log.Printf("[DEBUG] Got users '%+v'", users)
 	return users, nil
 }
 
@@ -34,6 +36,7 @@ func (c *Client) GetUser(id int) (User, error) {
 		return user, err
 	}
 
+	log.Printf("[INFO] Got user '%+v'", user)
 	return user, nil
 }
 
@@ -48,6 +51,7 @@ func (c *Client) CreateUser(u User) (User, error) {
 		return u, err
 	}
 
+	log.Printf("[INFO] Created user '%+v'", created)
 	return created, nil
 }
 
@@ -57,12 +61,13 @@ func (c *Client) UpdateUser(u User) (User, error) {
 	if err != nil {
 		return u, err
 	}
-	created := User{}
-	if err := c.sendRequest(req, &created); err != nil {
+	updated := User{}
+	if err := c.sendRequest(req, &updated); err != nil {
 		return u, err
 	}
 
-	return created, nil
+	log.Printf("[INFO] Updated user '%+v'", updated)
+	return updated, nil
 }
 
 func (c *Client) DeleteUser(id int) (DeleteSuccess, error) {
@@ -77,5 +82,6 @@ func (c *Client) DeleteUser(id int) (DeleteSuccess, error) {
 		return resp, err
 	}
 
+	log.Printf("[INFO] Deleted user by id='%d'", id)
 	return resp, nil
 }
