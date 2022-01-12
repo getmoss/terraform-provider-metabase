@@ -3,12 +3,10 @@ package metabase
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"terraform-provider-metabase/client"
-	"time"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"strconv"
+	"terraform-provider-metabase/client"
 )
 
 func resourcePermissionGroup() *schema.Resource {
@@ -19,11 +17,6 @@ func resourcePermissionGroup() *schema.Resource {
 
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
-		},
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(4 * time.Minute),
-			Delete: schema.DefaultTimeout(6 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -40,7 +33,7 @@ func resourcePermissionGroup() *schema.Resource {
 	}
 }
 
-func resourcePermissionGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePermissionGroupCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 
 	// Warning or errors can be collected in a slice type
@@ -80,7 +73,7 @@ func resourcePermissionGroupCreate(ctx context.Context, d *schema.ResourceData, 
 	return diags
 }
 
-func resourcePermissionGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePermissionGroupRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 	name := d.Get("name").(string)
 	id := d.Get("group_id").(int)
@@ -96,7 +89,7 @@ func resourcePermissionGroupRead(ctx context.Context, d *schema.ResourceData, me
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "Error reading",
-				Detail:   "Could not read permissionGroup=" + string(id) + ": " + err.Error(),
+				Detail:   "Could not read permissionGroup=" + strconv.Itoa(id) + ": " + err.Error(),
 			})
 			return diags
 		}
@@ -133,7 +126,7 @@ func resourcePermissionGroupRead(ctx context.Context, d *schema.ResourceData, me
 	return diags
 }
 
-func resourcePermissionGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePermissionGroupDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 
 	// Warning or errors can be collected in a slice type
