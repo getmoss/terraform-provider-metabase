@@ -9,20 +9,16 @@ import (
 	"net/http"
 )
 
-type UserId int
-type GroupId int
-type MembershipId int
-
 type Membership struct {
-	UserId       UserId       `json:"user_id"`
-	GroupId      GroupId      `json:"group_id"`
-	MembershipId MembershipId `json:"membership_id"`
+	UserId       int `json:"user_id"`
+	GroupId      int `json:"group_id"`
+	MembershipId int `json:"membership_id"`
 }
-type Memberships map[UserId][]Membership
+type Memberships map[int][]Membership
 
 type groupMembership struct {
-	UserId       UserId       `json:"user_id"`
-	MembershipId MembershipId `json:"membership_id"`
+	UserId       int `json:"user_id"`
+	MembershipId int `json:"membership_id"`
 }
 
 func (c *Client) GetMemberships() (Memberships, error) {
@@ -40,7 +36,8 @@ func (c *Client) GetMemberships() (Memberships, error) {
 	return memberships, nil
 }
 
-func (c *Client) CreateMembership(m Membership) (MembershipId, error) {
+func (c *Client) CreateMembership(m Membership) (Membership, error) {
+	var created Membership
 	var gm []groupMembership
 	url := fmt.Sprintf("%s/api/permissions/membership", c.BaseURL)
 	b := new(bytes.Buffer)
@@ -48,10 +45,10 @@ func (c *Client) CreateMembership(m Membership) (MembershipId, error) {
 	req, err := http.NewRequest(http.MethodPost, url, b)
 	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
-		return 0, err
+		return created, err
 	}
 	if err := c.sendRequest(req, &gm); err != nil {
-		return 0, err
+		return created, err
 	}
 
 	log.Printf("[INFO] Updated group membership '%+v'", gm)
@@ -59,14 +56,17 @@ func (c *Client) CreateMembership(m Membership) (MembershipId, error) {
 	// Find the membership_id for the user
 	for _, g := range gm {
 		if g.UserId == m.UserId {
-			return g.MembershipId, nil
+			created.MembershipId = g.MembershipId
+			created.UserId = g.UserId
+			created.GroupId = m.GroupId
+			return created, nil
 		}
 	}
 
-	return 0, errors.New("something went wrong in membership creation")
+	return created, errors.New("something went wrong in membership creation")
 }
 
-func (c *Client) DeleteMembership(membershipId MembershipId) error {
+func (c *Client) DeleteMembership(membershipId int) error {
 	url := fmt.Sprintf("%s/api/permissions/membership/%d", c.BaseURL, membershipId)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {

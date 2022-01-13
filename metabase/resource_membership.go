@@ -39,7 +39,7 @@ func resourceMembershipDelete(_ context.Context, d *schema.ResourceData, meta in
 	c := meta.(*client.Client)
 	membershipId, _ := strconv.Atoi(d.Id())
 
-	if err := c.DeleteMembership(client.MembershipId(membershipId)); err != nil {
+	if err := c.DeleteMembership(membershipId); err != nil {
 		return diag.Errorf("error deleting membership: %s for membershipId=[%d]", err, membershipId)
 	}
 	return
@@ -50,8 +50,8 @@ func resourceMembershipCreate(_ context.Context, d *schema.ResourceData, meta in
 	userId := d.Get("user_id").(int)
 	groupId := d.Get("group_id").(int)
 	m := client.Membership{
-		UserId:  client.UserId(userId),
-		GroupId: client.GroupId(groupId),
+		UserId:  userId,
+		GroupId: groupId,
 	}
 
 	created, err := c.CreateMembership(m)
@@ -59,7 +59,7 @@ func resourceMembershipCreate(_ context.Context, d *schema.ResourceData, meta in
 		return diag.Errorf("error creating membership: %s for userId=[%d]", err, userId)
 	}
 
-	d.SetId(strconv.Itoa(int(created)))
+	d.SetId(strconv.Itoa(created.MembershipId))
 	if err := d.Set("user_id", userId); err != nil {
 		return diag.FromErr(err)
 	}
@@ -101,7 +101,7 @@ func resourceMembershipRead(_ context.Context, d *schema.ResourceData, meta inte
 func findMatchingMembership(memberships client.Memberships, membershipId int) (m client.Membership) {
 	for _, userMemberships := range memberships {
 		for _, membership := range userMemberships {
-			if membership.MembershipId == client.MembershipId(membershipId) {
+			if membership.MembershipId == membershipId {
 				return membership
 			}
 		}
