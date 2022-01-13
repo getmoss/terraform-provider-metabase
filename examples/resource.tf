@@ -53,3 +53,11 @@ resource "metabase_user" "imported" {
 output "imported_user" {
   value = resource.metabase_user.imported
 }
+
+# ===============
+#   Membership
+# ===============
+resource "metabase_membership" "example" {
+  group_id = metabase_permission_group.import_test.group_id
+  user_id  = metabase_user.imported.user_id
+}

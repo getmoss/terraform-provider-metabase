@@ -51,7 +51,7 @@ func (c *Client) CreateMembership(m Membership) (Membership, error) {
 		return created, err
 	}
 
-	log.Printf("[INFO] Updated group membership '%+v'", gm)
+	log.Printf("[INFO] Updated group membership '%+v' by creating '%+v'", gm, m)
 
 	// Find the membership_id for the user
 	for _, g := range gm {

@@ -12,7 +12,7 @@ import (
 func TestGroupMembership(t *testing.T) {
 	t.Run("Get Memberships", func(t *testing.T) {
 		expected := Memberships{
-			UserId(1): []Membership{
+			1: []Membership{
 				{
 					UserId:       1,
 					GroupId:      2,
@@ -48,7 +48,7 @@ func TestGroupMembership(t *testing.T) {
 			GroupId: 1,
 			UserId:  2,
 		}
-		expected := MembershipId(3)
+		expected := 3
 		groupMembership := []groupMembership{{
 			UserId:       membershipToBeCreated.UserId,
 			MembershipId: expected,
@@ -77,7 +77,7 @@ func TestGroupMembership(t *testing.T) {
 	})
 
 	t.Run("Delete Membership", func(t *testing.T) {
-		membershipId := MembershipId(1)
+		membershipId := 1
 
 		mux := http.NewServeMux()
 		mux.HandleFunc(fmt.Sprintf("/api/permissions/membership/%d", membershipId), func(w http.ResponseWriter, r *http.Request) {

@@ -24,12 +24,14 @@ func resourceMembership() *schema.Resource {
 				Computed: true,
 			},
 			"user_id": {
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				Required: true,
+				ForceNew: true,
 			},
 			"group_id": {
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				Required: true,
+				ForceNew: true,
 			},
 		},
 	}
@@ -63,7 +65,7 @@ func resourceMembershipCreate(_ context.Context, d *schema.ResourceData, meta in
 	if err := d.Set("user_id", userId); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("membership_id", created); err != nil {
+	if err := d.Set("membership_id", created.MembershipId); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("group_id", groupId); err != nil {
