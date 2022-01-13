@@ -34,6 +34,7 @@ func New(version string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{
 				"metabase_permission_group": resourcePermissionGroup(),
 				"metabase_user":             resourceUser(),
+				"metabase_membership":       resourceMembership(),
 			},
 			Schema: map[string]*schema.Schema{
 				"host": {
@@ -103,7 +104,7 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}
-		d.Set(sessionIdKey, ls.SessionId)
+		_ = d.Set(sessionIdKey, ls.SessionId)
 
 		return ls.Client, diags
 	}
