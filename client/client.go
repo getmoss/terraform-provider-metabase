@@ -37,7 +37,8 @@ type LoginResponse struct {
 }
 
 type ErrorResponse struct {
-	Errors map[string]string `json:"errors"`
+	Errors  map[string]string `json:"errors"`
+	Message string            `json:"message"`
 }
 
 func NewClient(l LoginDetails) (LoginSuccess, error) {
@@ -67,7 +68,7 @@ func NewClient(l LoginDetails) (LoginSuccess, error) {
 		log.Printf("[DEBUG] Logging in with username/password")
 		creds := map[string]string{"username": l.Username, "password": l.Password}
 		b := new(bytes.Buffer)
-		json.NewEncoder(b).Encode(creds)
+		_ = json.NewEncoder(b).Encode(creds)
 
 		req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/session", l.Host), b)
 		req.Header.Set("Content-Type", "application/json")
@@ -88,7 +89,7 @@ func NewClient(l LoginDetails) (LoginSuccess, error) {
 		}
 
 		var resp LoginResponse
-		json.NewDecoder(res.Body).Decode(&resp)
+		_ = json.NewDecoder(res.Body).Decode(&resp)
 		sessionId = resp.Id
 	}
 
@@ -118,8 +119,9 @@ func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 		var errRes ErrorResponse
 		b, _ := io.ReadAll(res.Body)
 		if err = json.NewDecoder(bytes.NewReader(b)).Decode(&errRes); err == nil {
-			log.Printf("[ERROR] Error in request[%+v]: Got response[status=%+v, errors=%+v]", req.URL, res.Status, errRes.Errors)
-			return errors.New(fmt.Sprint(errRes.Errors))
+			errorMsg := fmt.Sprintf("errors='%+v', message='%s'", errRes.Errors, errRes.Message)
+			log.Printf("[ERROR] Error in request[%+v]: Got response[status='%+v', errors='%s']", req.URL, res.Status, errorMsg)
+			return errors.New(errorMsg)
 		}
 		return fmt.Errorf("status code: %d, error:%s", res.StatusCode, string(b))
 	}

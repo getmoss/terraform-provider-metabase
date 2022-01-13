@@ -15,7 +15,7 @@ There are a bunch of structs in the SDK that you have to provide implementations
     * `DataSourcesMap` returns the supported data sources.
 2. To add a `resource`, create an instance of [Resource](https://pkg.go.dev/github.com/hashicorp/terraform/helper/schema#Resource). Override the necessary members =>
     * `Schema` returns the supported fields.
-    * Provide mplementations of 4 `CRUD` methods + `ImportState` method as needed.
+    * Provide implementations of 4 `CRUD` methods + `ImportState` method as needed.
 3. To add a `data source`, implement [Resource](https://pkg.go.dev/github.com/hashicorp/terraform/helper/schema#Resource), same as `resource` above. For a data type, 2 methods are required:
     * `Schema` returns the supported fields.
     * `ReadContext` that reads the resource from the API. This can delegate to the `ReadContext` of the `resource`.
