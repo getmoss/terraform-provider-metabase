@@ -21,8 +21,8 @@ func TestUser(t *testing.T) {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/api/user", func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
-			case "GET":
-				json.NewEncoder(w).Encode(expected)
+			case http.MethodGet:
+				_ = json.NewEncoder(w).Encode(expected)
 			default:
 				w.WriteHeader(http.StatusBadRequest)
 			}
@@ -53,8 +53,8 @@ func TestUser(t *testing.T) {
 		mux := http.NewServeMux()
 		mux.HandleFunc(fmt.Sprintf("/api/user/%d", userId), func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
-			case "GET":
-				json.NewEncoder(w).Encode(expected)
+			case http.MethodGet:
+				_ = json.NewEncoder(w).Encode(expected)
 			default:
 				w.WriteHeader(http.StatusBadRequest)
 			}
@@ -88,8 +88,8 @@ func TestUser(t *testing.T) {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/api/user", func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
-			case "POST":
-				json.NewEncoder(w).Encode(expected)
+			case http.MethodPost:
+				_ = json.NewEncoder(w).Encode(expected)
 			default:
 				w.WriteHeader(http.StatusBadRequest)
 			}
@@ -124,8 +124,8 @@ func TestUser(t *testing.T) {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/api/user", func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
-			case "PUT":
-				json.NewEncoder(w).Encode(expected)
+			case http.MethodPut:
+				_ = json.NewEncoder(w).Encode(expected)
 			default:
 				w.WriteHeader(http.StatusBadRequest)
 			}
@@ -149,10 +149,10 @@ func TestUser(t *testing.T) {
 		expected := DeleteSuccess{Success: true}
 
 		mux := http.NewServeMux()
-		mux.HandleFunc(fmt.Sprintf("/api/userId/%d", userId), func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc(fmt.Sprintf("/api/user/%d", userId), func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
-			case "DELETE":
-				json.NewEncoder(w).Encode(expected)
+			case http.MethodDelete:
+				_ = json.NewEncoder(w).Encode(expected)
 			default:
 				w.WriteHeader(http.StatusBadRequest)
 			}

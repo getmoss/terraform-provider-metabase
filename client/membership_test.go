@@ -3,10 +3,11 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGroupMembership(t *testing.T) {
@@ -23,7 +24,7 @@ func TestGroupMembership(t *testing.T) {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/api/permissions/membership", func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
-			case "GET":
+			case http.MethodGet:
 				_ = json.NewEncoder(w).Encode(expected)
 			default:
 				w.WriteHeader(http.StatusBadRequest)
@@ -48,15 +49,20 @@ func TestGroupMembership(t *testing.T) {
 			GroupId: 1,
 			UserId:  2,
 		}
-		expected := 3
+		membershipId := 3
+		expected := Membership{
+			GroupId:      1,
+			UserId:       2,
+			MembershipId: membershipId,
+		}
 		groupMembership := []groupMembership{{
 			UserId:       membershipToBeCreated.UserId,
-			MembershipId: expected,
+			MembershipId: membershipId,
 		}}
 		mux := http.NewServeMux()
 		mux.HandleFunc("/api/permissions/membership", func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
-			case "POST":
+			case http.MethodPost:
 				_ = json.NewEncoder(w).Encode(groupMembership)
 			default:
 				w.WriteHeader(http.StatusBadRequest)
@@ -82,7 +88,7 @@ func TestGroupMembership(t *testing.T) {
 		mux := http.NewServeMux()
 		mux.HandleFunc(fmt.Sprintf("/api/permissions/membership/%d", membershipId), func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
-			case "DELETE":
+			case http.MethodDelete:
 				w.WriteHeader(http.StatusNoContent)
 			default:
 				w.WriteHeader(http.StatusBadRequest)

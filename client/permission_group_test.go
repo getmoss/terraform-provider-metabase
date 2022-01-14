@@ -1,80 +1,105 @@
 package client
 
 import (
-	"os"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPermissionGroups(t *testing.T) {
-	baseUrl := os.Getenv("BASE_URL")
-	username := os.Getenv("USERNAME")
-	password := os.Getenv("PASSWORD")
-	if baseUrl == "" || username == "" || password == "" {
-		t.Fatal("baseUrl, username, password must be set")
-	}
-
-	l := LoginDetails{
-		Host:      baseUrl,
-		Username:  username,
-		Password:  password,
-		SessionId: "",
-		UserAgent: "test",
-	}
-
-	success, _ := NewClient(l)
-	c := success.Client
-	var createdGroupId int
-
 	t.Run("Get PermissionGroups", func(t *testing.T) {
+		expected := PermissionGroups{{
+			Id:          1,
+			Name:        "Test Group",
+			MemberCount: 1,
+		}}
+		url := "/api/permissions/group"
+		httpMethod := http.MethodGet
+		svr := server(url, httpMethod, expected)
+		defer svr.Close()
+		c := Client{
+			BaseURL:    svr.URL,
+			HTTPClient: &http.Client{},
+		}
+
 		groups, err := c.GetPermissionGroups()
 
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(groups) == 0 {
-			t.Fatal("no groups returned")
-		}
+		assert.Nil(t, err)
+		assert.Equal(t, expected, groups)
 	})
 
 	t.Run("Create PermissionGroup", func(t *testing.T) {
+		expected := PermissionGroup{
+			Id: 1,
+		}
+		url := "/api/permissions/group"
+		httpMethod := http.MethodPost
+		svr := server(url, httpMethod, expected)
+		defer svr.Close()
+		c := Client{
+			BaseURL:    svr.URL,
+			HTTPClient: &http.Client{},
+		}
+
 		group, err := c.CreatePermissionGroup("test-client")
 
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if group.Id == 0 {
-			t.Fatal("group id is zero")
-		}
-		createdGroupId = group.Id
+		assert.Nil(t, err)
+		assert.Equal(t, expected, group)
 	})
 
 	t.Run("Get PermissionGroup", func(t *testing.T) {
-		group, err := c.GetPermissionGroup(createdGroupId)
-
-		if err != nil {
-			t.Fatal(err)
+		groupId := 1
+		expected := PermissionGroup{
+			Id:   groupId,
+			Name: "Test Group",
+		}
+		url := fmt.Sprintf("/api/permissions/group/%d", groupId)
+		httpMethod := http.MethodGet
+		svr := server(url, httpMethod, expected)
+		defer svr.Close()
+		c := Client{
+			BaseURL:    svr.URL,
+			HTTPClient: &http.Client{},
 		}
 
-		if group.Id == 0 || group.Name == "" {
-			t.Fatal("Get PermissionGroup failed")
-		}
+		group, err := c.GetPermissionGroup(groupId)
+
+		assert.Nil(t, err)
+		assert.Equal(t, expected, group)
 	})
 
 	t.Run("Delete PermissionGroup", func(t *testing.T) {
-		group, _ := c.GetPermissionGroup(createdGroupId)
+		groupId := 1
 
-		err := c.DeletePermissionGroup(group.Id)
-
-		if err != nil {
-			t.Fatal(err)
+		url := fmt.Sprintf("/api/permissions/group/%d", groupId)
+		httpMethod := http.MethodDelete
+		svr := server(url, httpMethod, nil)
+		defer svr.Close()
+		c := Client{
+			BaseURL:    svr.URL,
+			HTTPClient: &http.Client{},
 		}
 
-		group, _ = c.GetPermissionGroup(createdGroupId)
+		err := c.DeletePermissionGroup(groupId)
 
-		if group.Id != 0 {
-			t.Fatal("Delete PermissionGroup failed")
+		assert.Nil(t, err)
+	})
+}
+
+func server(url string, httpMethod string, expected interface{}) *httptest.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case httpMethod:
+			_ = json.NewEncoder(w).Encode(expected)
+		default:
+			w.WriteHeader(http.StatusBadRequest)
 		}
 	})
+	svr := httptest.NewServer(mux)
+	return svr
 }
