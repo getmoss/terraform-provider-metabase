@@ -1,10 +1,8 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,16 +16,8 @@ func TestUser(t *testing.T) {
 				Email: "test@example.com",
 			}},
 		}
-		mux := http.NewServeMux()
-		mux.HandleFunc("/api/user", func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case "GET":
-				json.NewEncoder(w).Encode(expected)
-			default:
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		})
-		svr := httptest.NewServer(mux)
+		httpMethod := http.MethodGet
+		svr := server("/api/user", httpMethod, expected)
 		defer svr.Close()
 
 		c := Client{
@@ -50,16 +40,9 @@ func TestUser(t *testing.T) {
 			LastName:  "Doe",
 		}
 
-		mux := http.NewServeMux()
-		mux.HandleFunc(fmt.Sprintf("/api/user/%d", userId), func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case "GET":
-				json.NewEncoder(w).Encode(expected)
-			default:
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		})
-		svr := httptest.NewServer(mux)
+		url := fmt.Sprintf("/api/user/%d", userId)
+		httpMethod := http.MethodGet
+		svr := server(url, httpMethod, expected)
 		defer svr.Close()
 
 		c := Client{
@@ -85,16 +68,9 @@ func TestUser(t *testing.T) {
 			FirstName: "John",
 			LastName:  "Doe",
 		}
-		mux := http.NewServeMux()
-		mux.HandleFunc("/api/user", func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case "POST":
-				json.NewEncoder(w).Encode(expected)
-			default:
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		})
-		svr := httptest.NewServer(mux)
+		httpMethod := http.MethodPost
+		url := "/api/user"
+		svr := server(url, httpMethod, expected)
 		defer svr.Close()
 
 		c := Client{
@@ -121,16 +97,8 @@ func TestUser(t *testing.T) {
 			FirstName: "John",
 			LastName:  "Doe",
 		}
-		mux := http.NewServeMux()
-		mux.HandleFunc("/api/user", func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case "PUT":
-				json.NewEncoder(w).Encode(expected)
-			default:
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		})
-		svr := httptest.NewServer(mux)
+		httpMethod := http.MethodPut
+		svr := server("/api/user", httpMethod, expected)
 		defer svr.Close()
 
 		c := Client{
@@ -148,16 +116,9 @@ func TestUser(t *testing.T) {
 		userId := 1
 		expected := DeleteSuccess{Success: true}
 
-		mux := http.NewServeMux()
-		mux.HandleFunc(fmt.Sprintf("/api/userId/%d", userId), func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case "DELETE":
-				json.NewEncoder(w).Encode(expected)
-			default:
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		})
-		svr := httptest.NewServer(mux)
+		url := fmt.Sprintf("/api/user/%d", userId)
+		httpMethod := http.MethodDelete
+		svr := server(url, httpMethod, expected)
 		defer svr.Close()
 
 		c := Client{
