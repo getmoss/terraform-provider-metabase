@@ -1,23 +1,22 @@
 package client
 
 import (
-	"fmt"
+	"encoding/json"
+	"github.com/hashicorp/go-uuid"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/hashicorp/go-uuid"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestLogin(t *testing.T) {
 	t.Run("1st time login", func(t *testing.T) {
 		sessionId, _ := uuid.GenerateUUID()
-		mux := http.NewServeMux()
-		mux.HandleFunc("/api/session", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `{ "id": "%s" }`, sessionId)
-		})
-		svr := httptest.NewServer(mux)
+		loginResponse := LoginResponse{Id: sessionId}
+		url := "/api/session"
+		httpMethod := http.MethodPost
+
+		svr := server(url, httpMethod, loginResponse)
 		defer svr.Close()
 
 		l := LoginDetails{
@@ -28,20 +27,18 @@ func TestLogin(t *testing.T) {
 			UserAgent: "test",
 		}
 
-		success, err := NewClient(l)
+		client, err := NewClient(l)
 
 		assert.Nil(t, err)
-		assert.NotNil(t, success.Client)
-		assert.Equal(t, sessionId, success.SessionId)
+		assert.Equal(t, sessionId, client.SessionId)
+		assert.Equal(t, svr.URL, client.Client.BaseURL)
 	})
 
 	t.Run("Re-use sessionId", func(t *testing.T) {
 		sessionId, _ := uuid.GenerateUUID()
-		mux := http.NewServeMux()
-		mux.HandleFunc("/api/user/current", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `{ "id": 1 }`)
-		})
-		svr := httptest.NewServer(mux)
+		url := "/api/user/current"
+		httpMethod := http.MethodGet
+		svr := server(url, httpMethod, nil)
 		defer svr.Close()
 
 		l := LoginDetails{
@@ -66,7 +63,7 @@ func TestLogin(t *testing.T) {
 			w.WriteHeader(http.StatusUnauthorized)
 		})
 		mux.HandleFunc("/api/session", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `{ "id": "%s" }`, sessionId)
+			_ = json.NewEncoder(w).Encode(LoginResponse{Id: sessionId})
 		})
 		svr := httptest.NewServer(mux)
 		defer svr.Close()

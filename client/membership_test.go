@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -21,16 +20,9 @@ func TestGroupMembership(t *testing.T) {
 				},
 			},
 		}
-		mux := http.NewServeMux()
-		mux.HandleFunc("/api/permissions/membership", func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodGet:
-				_ = json.NewEncoder(w).Encode(expected)
-			default:
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		})
-		svr := httptest.NewServer(mux)
+		url := "/api/permissions/membership"
+		httpMethod := http.MethodGet
+		svr := server(url, httpMethod, expected)
 		defer svr.Close()
 
 		c := Client{
@@ -59,16 +51,9 @@ func TestGroupMembership(t *testing.T) {
 			UserId:       membershipToBeCreated.UserId,
 			MembershipId: membershipId,
 		}}
-		mux := http.NewServeMux()
-		mux.HandleFunc("/api/permissions/membership", func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodPost:
-				_ = json.NewEncoder(w).Encode(groupMembership)
-			default:
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		})
-		svr := httptest.NewServer(mux)
+		url := "/api/permissions/membership"
+		httpMethod := http.MethodPost
+		svr := server(url, httpMethod, groupMembership)
 		defer svr.Close()
 
 		c := Client{
