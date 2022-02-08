@@ -13,8 +13,14 @@ description: |-
 ## Example Usage
 
 ```terraform
-provider "scaffolding" {
-  # example configuration here
+variable "host" {}
+variable "username" {}
+variable "password" {}
+
+provider "metabase" {
+  username = var.username
+  password = var.password
+  host     = var.host
 }
 ```
 
