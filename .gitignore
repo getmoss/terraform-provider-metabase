@@ -41,3 +41,6 @@ plan
 
 # secret file
 local.tfvars
+
+.tfstate
+.tfstate.backup
