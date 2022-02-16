@@ -2,11 +2,12 @@ package client
 
 import (
 	"encoding/json"
-	"github.com/hashicorp/go-uuid"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/hashicorp/go-uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLogin(t *testing.T) {

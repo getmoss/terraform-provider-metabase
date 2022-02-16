@@ -24,6 +24,9 @@ type Users struct {
 }
 
 func (c *Client) GetUsers() (Users, error) {
+	if c.users != nil {
+		return *c.users, nil
+	}
 	url := fmt.Sprintf("%s/api/user", c.BaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	users := Users{}
@@ -35,6 +38,7 @@ func (c *Client) GetUsers() (Users, error) {
 	}
 
 	log.Printf("[DEBUG] Got users '%+v'", users)
+	c.users = &users
 	return users, nil
 }
 
