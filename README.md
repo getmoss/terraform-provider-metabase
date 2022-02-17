@@ -16,7 +16,7 @@ provider "metabase" {
 ```
 
 ## Developing the Provider
-Checkout [notes](./docs/development.md)
+Checkout [notes](./development.md)
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
 
