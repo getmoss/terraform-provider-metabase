@@ -140,13 +140,12 @@ func TestUser(t *testing.T) {
 				Email: email,
 			}},
 		}
-		httpMethod := http.MethodGet
-		svr := server("/api/user", httpMethod, expected)
-
+		svr := server("/api/user", http.MethodGet, expected)
 		c := Client{
 			BaseURL:    svr.URL,
 			HTTPClient: &http.Client{},
 		}
+
 		orig, errOrig := c.GetUsers()
 		svr.Close() // close so the mock server is not running
 		later, errLater := c.GetUsers()

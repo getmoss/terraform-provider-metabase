@@ -20,6 +20,10 @@ type PermissionGroups []struct {
 }
 
 func (c *Client) GetPermissionGroups() (PermissionGroups, error) {
+	if c.permissionGroups != nil {
+		return *c.permissionGroups, nil
+	}
+
 	url := fmt.Sprintf("%s/api/permissions/group", c.BaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -30,6 +34,7 @@ func (c *Client) GetPermissionGroups() (PermissionGroups, error) {
 		return nil, err
 	}
 
+	c.permissionGroups = &pg
 	return pg, nil
 }
 
