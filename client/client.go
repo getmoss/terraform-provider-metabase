@@ -15,8 +15,10 @@ type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
 
-	sessionId string
-	userAgent string
+	sessionId        string
+	userAgent        string
+	users            *Users
+	permissionGroups *PermissionGroups
 }
 
 type LoginDetails struct {
@@ -49,20 +51,8 @@ func NewClient(l LoginDetails) (LoginSuccess, error) {
 	var sessionId string
 
 	// Re-use existing sessionId if possible
-	if l.SessionId != "" {
-		log.Printf("[DEBUG] Checking if existing sessionId is valid")
-		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/user/current", l.Host), nil)
-		res, err := httpClient.Do(req)
-		if err != nil {
-			log.Printf("[WARN] Error fetching current user: %s", err)
-		}
-		defer res.Body.Close()
-
-		if res.StatusCode == http.StatusOK {
-			// Session Id is valid
-			sessionId = l.SessionId
-		}
-	}
+	// Session Id is valid
+	sessionId = loginWithSessionId(l, httpClient, sessionId)
 
 	if sessionId == "" { // Login with username/password
 		log.Printf("[DEBUG] Logging in with username/password")
@@ -102,6 +92,24 @@ func NewClient(l LoginDetails) (LoginSuccess, error) {
 		},
 		SessionId: sessionId,
 	}, nil
+}
+
+func loginWithSessionId(l LoginDetails, httpClient *http.Client, sessionId string) string {
+	if l.SessionId != "" {
+		log.Printf("[DEBUG] Checking if existing sessionId is valid")
+		req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/user/current", l.Host), nil)
+		res, err := httpClient.Do(req)
+		if err != nil {
+			log.Printf("[WARN] Error fetching current user: %s", err)
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode == http.StatusOK {
+
+			sessionId = l.SessionId
+		}
+	}
+	return sessionId
 }
 
 func (c *Client) sendRequest(req *http.Request, v interface{}) error {

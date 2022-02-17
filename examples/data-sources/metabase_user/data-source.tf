@@ -1,7 +1,3 @@
-data "metabase_user" "user_by_email" {
+data "metabase_user" "user" {
   email = "john.doe@example.com"
-}
-
-data "metabase_user" "user_by_id" {
-  user_id = 1
 }

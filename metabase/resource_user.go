@@ -3,11 +3,12 @@ package metabase
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"strconv"
 	"terraform-provider-metabase/client"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceUser() *schema.Resource {
@@ -113,7 +114,7 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(created.Id))
+	d.SetId(created.Email)
 	if err := d.Set("first_name", created.FirstName); err != nil {
 		return diag.FromErr(err)
 	}
@@ -133,57 +134,40 @@ func resourceUserCreate(_ context.Context, d *schema.ResourceData, meta interfac
 func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 
-	id := getIdForRead(d)
-
-	email := d.Get("email").(string)
+	email := d.Id()
 
 	var diags diag.Diagnostics
 
 	var user client.User
-	// Get current values from API by Id if present
-	if id != 0 {
-		var err error
-		user, err = c.GetUser(id)
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error reading",
-				Detail:   "Could not read user=" + strconv.Itoa(id) + ": " + err.Error(),
-			})
-			return diags
+
+	// fetch all users and find the one with the given email
+	log.Printf("[INFO] Finding user by email '%s'", email)
+	users, err := c.GetUsers()
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error reading",
+			Detail:   "Could not read users: " + err.Error(),
+		})
+		return diags
+	}
+	for _, i := range users.Data {
+		if i.Email == email {
+			user = i
+			break
 		}
 	}
 
 	if (user == client.User{}) {
-		// fetch all users and find the one with the given email
-		log.Printf("[INFO] Finding user by email '%s'", email)
-		users, err := c.GetUsers()
-		if err != nil {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error reading",
-				Detail:   "Could not read users: " + err.Error(),
-			})
-			return diags
-		}
-		for _, i := range users.Data {
-			if i.Email == email {
-				user = i
-				break
-			}
-		}
-
-		if (user == client.User{}) {
-			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Error reading user",
-				Detail:   fmt.Sprintf("Could not read user with email '%s'", email),
-			})
-			return diags
-		}
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Error reading user",
+			Detail:   fmt.Sprintf("Could not find user with email '%s'", email),
+		})
+		return diags
 	}
 
-	d.SetId(strconv.Itoa(user.Id))
+	d.SetId(user.Email)
 	if err := d.Set("user_id", user.Id); err != nil {
 		return diag.FromErr(err)
 	}
@@ -198,14 +182,6 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	return diags
-}
-
-func getIdForRead(d *schema.ResourceData) int {
-	id, err := strconv.Atoi(d.Id()) // Used for import
-	if err != nil || id == 0 {
-		return d.Get("user_id").(int) // Used for data source
-	}
-	return id
 }
 
 func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

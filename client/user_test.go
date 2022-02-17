@@ -131,4 +131,27 @@ func TestUser(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, expected, us)
 	})
+
+	t.Run("Get users & cache them so that subsequent calls are not making network call", func(t *testing.T) {
+		email := "test@example.com"
+		expected := Users{
+			Data: []User{{
+				Id:    1,
+				Email: email,
+			}},
+		}
+		svr := server("/api/user", http.MethodGet, expected)
+		c := Client{
+			BaseURL:    svr.URL,
+			HTTPClient: &http.Client{},
+		}
+
+		orig, errOrig := c.GetUsers()
+		svr.Close() // close so the mock server is not running
+		later, errLater := c.GetUsers()
+
+		assert.Nil(t, errOrig)
+		assert.Nil(t, errLater)
+		assert.Equal(t, orig, later)
+	})
 }
