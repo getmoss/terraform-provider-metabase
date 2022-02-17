@@ -12,20 +12,22 @@ func dataSourcePermissionGroup() *schema.Resource {
 		ReadContext: dataSourcePermissionGroupRead,
 
 		Schema: map[string]*schema.Schema{
-			"group_id": {
-				Description: "Group Id. At least one of `group_id` or `name` must be specified.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
 			"name": {
-				Description: "Group Name. At least one of `group_id` or `name` must be specified.",
+				Description: "Group Name",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
+			},
+			"group_id": {
+				Description: "Group Id",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 		},
 	}
 }
 
 func dataSourcePermissionGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	id := d.Get("name").(string)
+	d.SetId(id)
 	return resourcePermissionGroupRead(ctx, d, meta)
 }

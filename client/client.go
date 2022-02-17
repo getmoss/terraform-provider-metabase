@@ -15,9 +15,10 @@ type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
 
-	sessionId string
-	userAgent string
-	users     *Users
+	sessionId        string
+	userAgent        string
+	users            *Users
+	permissionGroups *PermissionGroups
 }
 
 type LoginDetails struct {

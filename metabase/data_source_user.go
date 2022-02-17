@@ -12,15 +12,14 @@ func dataSourceUser() *schema.Resource {
 		ReadContext: dataSourceUserRead,
 
 		Schema: map[string]*schema.Schema{
-			"user_id": {
-				Description: "User Id. At least one of `user_id` or `email` must be specified.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
 			"email": {
-				Description: "User email. At least one of `user_id` or `email` must be specified.",
+				Description: "User email address",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
+			},
+			"user_id": {
+				Type:     schema.TypeInt,
+				Computed: true,
 			},
 			"first_name": {
 				Type:     schema.TypeString,
@@ -35,5 +34,7 @@ func dataSourceUser() *schema.Resource {
 }
 
 func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	id := d.Get("email").(string)
+	d.SetId(id)
 	return resourceUserRead(ctx, d, meta)
 }

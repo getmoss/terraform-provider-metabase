@@ -86,4 +86,26 @@ func TestPermissionGroups(t *testing.T) {
 
 		assert.Nil(t, err)
 	})
+
+	t.Run("Get groups & cache them so that subsequent calls are not making network call", func(t *testing.T) {
+		name := "Test Group"
+		expected := PermissionGroups{{
+			Id:          1,
+			Name:        name,
+			MemberCount: 1,
+		}}
+		svr := server("/api/permissions/group", http.MethodGet, expected)
+		c := Client{
+			BaseURL:    svr.URL,
+			HTTPClient: &http.Client{},
+		}
+
+		orig, errOrig := c.GetPermissionGroups()
+		svr.Close() // close so the mock server is not running
+		later, errLater := c.GetPermissionGroups()
+
+		assert.Nil(t, errOrig)
+		assert.Nil(t, errLater)
+		assert.Equal(t, orig, later)
+	})
 }
