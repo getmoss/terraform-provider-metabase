@@ -8,7 +8,22 @@ import (
 	"net/http"
 )
 
+type PermissionGroup struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type PermissionGroups []struct {
+	Id          int    `json:"id"`
+	Name        string `json:"name"`
+	MemberCount int    `json:"member_count"`
+}
+
 func (c *Client) GetPermissionGroups() (PermissionGroups, error) {
+	if c.permissionGroups != nil {
+		return *c.permissionGroups, nil
+	}
+
 	url := fmt.Sprintf("%s/api/permissions/group", c.BaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -19,6 +34,7 @@ func (c *Client) GetPermissionGroups() (PermissionGroups, error) {
 		return nil, err
 	}
 
+	c.permissionGroups = &pg
 	return pg, nil
 }
 
@@ -42,7 +58,7 @@ func (c *Client) CreatePermissionGroup(name string) (PermissionGroup, error) {
 	url := fmt.Sprintf("%s/api/permissions/group", c.BaseURL)
 	pg := PermissionGroup{Name: name}
 	b := new(bytes.Buffer)
-	json.NewEncoder(b).Encode(pg)
+	_ = json.NewEncoder(b).Encode(pg)
 	req, err := http.NewRequest(http.MethodPost, url, b)
 	req.Header.Set("Content-Type", "application/json")
 	if err != nil {

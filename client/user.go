@@ -12,7 +12,21 @@ type DeleteSuccess struct {
 	Success bool `json:"success"`
 }
 
+type User struct {
+	Id        int    `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}
+
+type Users struct {
+	Data []User `json:"data"`
+}
+
 func (c *Client) GetUsers() (Users, error) {
+	if c.users != nil {
+		return *c.users, nil
+	}
 	url := fmt.Sprintf("%s/api/user", c.BaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	users := Users{}
@@ -24,6 +38,7 @@ func (c *Client) GetUsers() (Users, error) {
 	}
 
 	log.Printf("[DEBUG] Got users '%+v'", users)
+	c.users = &users
 	return users, nil
 }
 
@@ -45,7 +60,7 @@ func (c *Client) GetUser(id int) (User, error) {
 func (c *Client) CreateUser(u User) (User, error) {
 	url := fmt.Sprintf("%s/api/user", c.BaseURL)
 	b := new(bytes.Buffer)
-	json.NewEncoder(b).Encode(u)
+	_ = json.NewEncoder(b).Encode(u)
 	req, err := http.NewRequest(http.MethodPost, url, b)
 	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
@@ -63,7 +78,7 @@ func (c *Client) CreateUser(u User) (User, error) {
 func (c *Client) UpdateUser(u User) (User, error) {
 	url := fmt.Sprintf("%s/api/user", c.BaseURL)
 	b := new(bytes.Buffer)
-	json.NewEncoder(b).Encode(u)
+	_ = json.NewEncoder(b).Encode(u)
 	req, err := http.NewRequest(http.MethodPut, url, b)
 	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
