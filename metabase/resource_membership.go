@@ -2,10 +2,11 @@ package metabase
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"strconv"
 	"terraform-provider-metabase/client"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceMembership() *schema.Resource {
@@ -79,12 +80,16 @@ func resourceMembershipRead(_ context.Context, d *schema.ResourceData, meta inte
 
 	c := meta.(*client.Client)
 	var m client.Membership
-	if memberships, err := c.GetMemberships(); err != nil {
-		m = findMatchingMembership(memberships, membershipId)
 
-		if m == (client.Membership{}) {
-			return diag.Errorf("Could not find Membership by id [%d] in memberships[%+v]", membershipId, memberships)
-		}
+	memberships, err := c.GetMemberships()
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	m = findMatchingMembership(memberships, membershipId)
+
+	if m == (client.Membership{}) {
+		return diag.Errorf("Could not find Membership by id [%d] in memberships[%+v]", membershipId, memberships)
 	}
 
 	if err := d.Set("user_id", m.UserId); err != nil {
