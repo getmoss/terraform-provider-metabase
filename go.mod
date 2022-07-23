@@ -1,6 +1,6 @@
 module terraform-provider-metabase
 
-go 1.17
+go 1.18
 
 require (
 	github.com/hashicorp/go-uuid v1.0.3
