@@ -44,3 +44,5 @@ local.tfvars
 
 .tfstate
 .tfstate.backup
+
+.devcontainer/**
