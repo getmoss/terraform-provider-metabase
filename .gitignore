@@ -44,5 +44,6 @@ local.tfvars
 
 .tfstate
 .tfstate.backup
+terraform-provider-metabase
 
 .devcontainer/**
