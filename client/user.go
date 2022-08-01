@@ -8,10 +8,6 @@ import (
 	"net/http"
 )
 
-type DeleteSuccess struct {
-	Success bool `json:"success"`
-}
-
 type User struct {
 	Id        int    `json:"id"`
 	Email     string `json:"email"`

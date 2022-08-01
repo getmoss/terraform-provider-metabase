@@ -15,12 +15,16 @@ provider "metabase" {
 }
 ```
 
+**Ensure the host value doesn't contain a slash '/' at the end**
+
 ## Developing the Provider
 Checkout [notes](./development.md)
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
 
 To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
+
+To compile for Silicon M1 run `GOOS=darwin GOARCH=arm64 go build -o terraform-provider-metabase .`
 
 To generate or update documentation, run `go generate`.
 
