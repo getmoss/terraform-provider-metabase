@@ -35,6 +35,7 @@ func New(version string) func() *schema.Provider {
 				"metabase_permission_group": resourcePermissionGroup(),
 				"metabase_user":             resourceUser(),
 				"metabase_membership":       resourceMembership(),
+				"metabase_collection":       resourceCollection(),
 			},
 			Schema: map[string]*schema.Schema{
 				"host": {

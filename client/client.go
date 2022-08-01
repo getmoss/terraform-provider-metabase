@@ -19,6 +19,8 @@ type Client struct {
 	userAgent        string
 	users            *Users
 	permissionGroups *PermissionGroups
+	collections      *Collections
+	collectionGraph  *CollectionGraph
 }
 
 type LoginDetails struct {
@@ -32,6 +34,10 @@ type LoginDetails struct {
 type LoginSuccess struct {
 	Client    *Client
 	SessionId string
+}
+
+type DeleteSuccess struct {
+	Success bool `json:"success"`
 }
 
 type LoginResponse struct {
