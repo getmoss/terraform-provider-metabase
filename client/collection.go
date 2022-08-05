@@ -10,7 +10,7 @@ import (
 
 type Collection struct {
 	Id       int    `json:"id"`
-	ParentId int    `json:"parent_id"`
+	ParentId int    `json:"parent_id,omitempty"`
 	Name     string `json:"name"`
 	Color    string `json:"color"`
 	Archived bool   `json:"archived"`
