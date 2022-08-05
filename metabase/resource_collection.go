@@ -156,8 +156,23 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	sort.Ints(updated_read_access)
 	sort.Ints(updated_write_access)
 
+	if updated.ParentId != 0 {
+		if err := d.Set("parent_id", updated.ParentId); err != nil {
+			return diag.FromErr(err)
+		}
+	}
 	if err := d.Set("name", updated.Name); err != nil {
 		return diag.FromErr(err)
+	}
+	if len(updated_read_access) != 0 {
+		if err := d.Set("read_access", updated_read_access); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+	if len(updated_write_access) != 0 {
+		if err := d.Set("write_access", updated_write_access); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 	if err := d.Set("color", updated.Color); err != nil {
 		return diag.FromErr(err)
@@ -202,6 +217,7 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	// Assign collection graph groups permissions
 	permissions := map[string]map[string]string{}
 
+	// We need to fetch the current collection graph revision
 	collectionGraph, err := c.GetCollectionGraph()
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -258,8 +274,10 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	sort.Ints(updated_write_access)
 
 	d.SetId(fmt.Sprint(created.Id))
-	if err := d.Set("parent_id", created.ParentId); err != nil {
-		return diag.FromErr(err)
+	if col.ParentId != 0 {
+		if err := d.Set("parent_id", created.ParentId); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 	if err := d.Set("name", created.Name); err != nil {
 		return diag.FromErr(err)
@@ -339,11 +357,15 @@ func resourceCollectionRead(_ context.Context, d *schema.ResourceData, meta inte
 			return diag.FromErr(err)
 		}
 	}
-	if err := d.Set("read_access", read_access); err != nil {
-		return diag.FromErr(err)
+	if len(read_access) != 0 {
+		if err := d.Set("read_access", read_access); err != nil {
+			return diag.FromErr(err)
+		}
 	}
-	if err := d.Set("write_access", write_access); err != nil {
-		return diag.FromErr(err)
+	if len(write_access) != 0 {
+		if err := d.Set("write_access", write_access); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 	if err := d.Set("name", col.Name); err != nil {
 		return diag.FromErr(err)
