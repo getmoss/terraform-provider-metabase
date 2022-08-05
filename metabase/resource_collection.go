@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 	"terraform-provider-metabase/client"
 
@@ -22,14 +23,35 @@ func resourceCollection() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"parent_id": {
+				Description: "Parent collection id",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+			},
 			"name": {
 				Description: "Collection name",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"read_access": {
+				Description: "List of groups id with read access",
+				Type:        schema.TypeList,
+				Elem:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+			},
+			"write_access": {
+				Description: "List of groups id with write access",
+				Type:        schema.TypeList,
+				Elem:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+			},
 			"color": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  "#31698A",
 			},
 			"archived": {
 				Type:     schema.TypeBool,
@@ -46,12 +68,16 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	var diags diag.Diagnostics
 
 	id, _ := strconv.Atoi(d.Id())
+	parent_id := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
+	read_access := d.Get("read_access").([]int)
+	write_access := d.Get("write_access").([]int)
 	color := d.Get("color").(string)
 	archived := d.Get("archived").(bool)
 
 	col := client.Collection{
 		Id:       id,
+		ParentId: parent_id,
 		Name:     name,
 		Color:    color,
 		Archived: archived,
@@ -67,6 +93,64 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 		})
 		return diags
 	}
+
+	// Update collection graph groups permissions
+	permissions := map[string]map[string]string{}
+
+	collectionGraph, err := c.GetCollectionGraph()
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Error reading the current collection '%s' permissions", name),
+			Detail:   "Could not read the current collection permissions, unexpected error: " + err.Error(),
+		})
+		return diags
+	}
+
+	for i := 0; i < len(read_access); i++ {
+		if len(permissions[fmt.Sprint(read_access[i])]) == 0 {
+			permissions[fmt.Sprint(read_access[i])] = map[string]string{}
+		}
+		permissions[fmt.Sprint(read_access[i])][d.Id()] = "read"
+	}
+
+	for i := 0; i < len(write_access); i++ {
+		if len(permissions[fmt.Sprint(write_access[i])]) == 0 {
+			permissions[fmt.Sprint(write_access[i])] = map[string]string{}
+		}
+		permissions[fmt.Sprint(write_access[i])][d.Id()] = "write"
+	}
+
+	collectionGraph.Groups = permissions
+
+	updated_cg, err := c.UpdateCollectionGraph(collectionGraph)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Error updating collection '%s' permissions", name),
+			Detail:   "Could not update the collection permissions, unexpected error: " + err.Error(),
+		})
+		return diags
+	}
+
+	var updated_read_access []int
+	var updated_write_access []int
+
+	for groupId, permission := range updated_cg.Groups {
+		groupIdInt, _ := strconv.Atoi(groupId)
+
+		if v, found := permission[d.Id()]; found {
+			switch v {
+			case "read":
+				updated_read_access = append(read_access, groupIdInt)
+			case "write":
+				updated_write_access = append(write_access, groupIdInt)
+			}
+		}
+	}
+
+	sort.Ints(updated_read_access)
+	sort.Ints(updated_write_access)
 
 	if err := d.Set("name", updated.Name); err != nil {
 		return diag.FromErr(err)
@@ -87,10 +171,14 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
+	parent_id := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
+	read_access := d.Get("read_access").([]int)
+	write_access := d.Get("write_access").([]int)
 	color := d.Get("color").(string)
 	archived := d.Get("archived").(bool)
 	col := client.Collection{
+		ParentId: parent_id,
 		Name:     name,
 		Color:    color,
 		Archived: archived,
@@ -107,8 +195,75 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 		return diags
 	}
 
+	// Assign collection graph groups permissions
+	permissions := map[string]map[string]string{}
+
+	collectionGraph, err := c.GetCollectionGraph()
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Error reading the current collection '%s' permissions", name),
+			Detail:   "Could not read the current collection permissions, unexpected error: " + err.Error(),
+		})
+		return diags
+	}
+
+	for i := 0; i < len(read_access); i++ {
+		if len(permissions[fmt.Sprint(read_access[i])]) == 0 {
+			permissions[fmt.Sprint(read_access[i])] = map[string]string{}
+		}
+		permissions[fmt.Sprint(read_access[i])][d.Id()] = "read"
+	}
+
+	for i := 0; i < len(write_access); i++ {
+		if len(permissions[fmt.Sprint(write_access[i])]) == 0 {
+			permissions[fmt.Sprint(write_access[i])] = map[string]string{}
+		}
+		permissions[fmt.Sprint(write_access[i])][d.Id()] = "write"
+	}
+
+	collectionGraph.Groups = permissions
+
+	updated, err := c.UpdateCollectionGraph(collectionGraph)
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Error updating collection '%s' permissions", name),
+			Detail:   "Could not update the collection permissions, unexpected error: " + err.Error(),
+		})
+		return diags
+	}
+
+	var updated_read_access []int
+	var updated_write_access []int
+
+	for groupId, permission := range updated.Groups {
+		groupIdInt, _ := strconv.Atoi(groupId)
+
+		if v, found := permission[d.Id()]; found {
+			switch v {
+			case "read":
+				updated_read_access = append(read_access, groupIdInt)
+			case "write":
+				updated_write_access = append(write_access, groupIdInt)
+			}
+		}
+	}
+
+	sort.Ints(updated_read_access)
+	sort.Ints(updated_write_access)
+
 	d.SetId(fmt.Sprint(created.Id))
+	if err := d.Set("parent_id", created.ParentId); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set("name", created.Name); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("read_access", updated_read_access); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("write_access", updated_write_access); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("color", created.Color); err != nil {
@@ -144,7 +299,45 @@ func resourceCollectionRead(_ context.Context, d *schema.ResourceData, meta inte
 		return diags
 	}
 
+	cg, err := c.GetCollectionGraph()
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Error read collection '%s' permissions", col.Name),
+			Detail:   "Could not update the collection permissions, unexpected error: " + err.Error(),
+		})
+		return diags
+	}
+
+	var read_access []int
+	var write_access []int
+
+	for groupId, permission := range cg.Groups {
+		groupIdInt, _ := strconv.Atoi(groupId)
+
+		if v, found := permission[d.Id()]; found {
+			switch v {
+			case "read":
+				read_access = append(read_access, groupIdInt)
+			case "write":
+				read_access = append(write_access, groupIdInt)
+			}
+		}
+	}
+
+	sort.Ints(read_access)
+	sort.Ints(write_access)
+
 	d.SetId(fmt.Sprintf("%v", col.Id))
+	if err := d.Set("parent_id", col.ParentId); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("read_access", read_access); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("write_access", write_access); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set("name", col.Name); err != nil {
 		return diag.FromErr(err)
 	}
