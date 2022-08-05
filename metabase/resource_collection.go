@@ -113,6 +113,10 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 		if len(permissions[fmt.Sprint(read_access[i])]) == 0 {
 			permissions[fmt.Sprint(read_access[i])] = map[string]string{}
 		}
+		// Trying to fix the problem, if the group is "2" we don't want to change anything as this group is admin and always have write
+		if read_access[i] == 2 {
+			break
+		}
 		permissions[fmt.Sprint(read_access[i])][d.Id()] = "read"
 	}
 
@@ -120,14 +124,23 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 		if len(permissions[fmt.Sprint(write_access[i])]) == 0 {
 			permissions[fmt.Sprint(write_access[i])] = map[string]string{}
 		}
+		// Trying to fix the problem, if the group is "2" we don't want to change anything as this group is admin and always have write
+		if read_access[i] == 2 {
+			break
+		}
 		permissions[fmt.Sprint(write_access[i])][d.Id()] = "write"
 	}
 
-	for groupId, _ := range collectionGraph.Groups {
+	for groupId := range collectionGraph.Groups {
 		if _, found := permissions[groupId]; !found {
 			permissions[groupId] = map[string]string{}
 			permissions[groupId][fmt.Sprint(updated.Id)] = "none"
 		}
+		// Admin group always can write
+		// Trying to fix the problem, if the group is "2" we don't want to change anything as this group is admin and always have write
+
+		permissions["2"] = map[string]string{}
+		permissions["2"][fmt.Sprint(updated.Id)] = "write"
 	}
 
 	collectionGraph.Groups = permissions
