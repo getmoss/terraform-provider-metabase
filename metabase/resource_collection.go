@@ -37,16 +37,20 @@ func resourceCollection() *schema.Resource {
 			"read_access": {
 				Description: "List of groups id with read access",
 				Type:        schema.TypeList,
-				Elem:        schema.TypeInt,
-				Optional:    true,
-				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeInt,
+				},
+				Optional: true,
+				Computed: true,
 			},
 			"write_access": {
 				Description: "List of groups id with write access",
 				Type:        schema.TypeList,
-				Elem:        schema.TypeInt,
-				Optional:    true,
-				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeInt,
+				},
+				Optional: true,
+				Computed: true,
 			},
 			"color": {
 				Type:     schema.TypeString,
@@ -70,8 +74,8 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	id, _ := strconv.Atoi(d.Id())
 	parent_id := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
-	read_access := d.Get("read_access").([]int)
-	write_access := d.Get("write_access").([]int)
+	read_access := d.Get("read_access").([]interface{})
+	write_access := d.Get("write_access").([]interface{})
 	color := d.Get("color").(string)
 	archived := d.Get("archived").(bool)
 
@@ -142,9 +146,9 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 		if v, found := permission[d.Id()]; found {
 			switch v {
 			case "read":
-				updated_read_access = append(read_access, groupIdInt)
+				updated_read_access = append(updated_read_access, groupIdInt)
 			case "write":
-				updated_write_access = append(write_access, groupIdInt)
+				updated_write_access = append(updated_write_access, groupIdInt)
 			}
 		}
 	}
@@ -173,8 +177,8 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 
 	parent_id := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
-	read_access := d.Get("read_access").([]int)
-	write_access := d.Get("write_access").([]int)
+	read_access := d.Get("read_access").([]interface{})
+	write_access := d.Get("write_access").([]interface{})
 	color := d.Get("color").(string)
 	archived := d.Get("archived").(bool)
 	col := client.Collection{
@@ -243,9 +247,9 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 		if v, found := permission[d.Id()]; found {
 			switch v {
 			case "read":
-				updated_read_access = append(read_access, groupIdInt)
+				updated_read_access = append(updated_read_access, groupIdInt)
 			case "write":
-				updated_write_access = append(write_access, groupIdInt)
+				updated_write_access = append(updated_write_access, groupIdInt)
 			}
 		}
 	}
@@ -312,25 +316,28 @@ func resourceCollectionRead(_ context.Context, d *schema.ResourceData, meta inte
 	var read_access []int
 	var write_access []int
 
-	for groupId, permission := range cg.Groups {
-		groupIdInt, _ := strconv.Atoi(groupId)
+	for groupId := range cg.Groups {
+		if v, found := cg.Groups[groupId][d.Id()]; found {
+			groupIdInt, _ := strconv.Atoi(groupId)
 
-		if v, found := permission[d.Id()]; found {
 			switch v {
 			case "read":
 				read_access = append(read_access, groupIdInt)
 			case "write":
-				read_access = append(write_access, groupIdInt)
+				write_access = append(write_access, groupIdInt)
 			}
 		}
+
 	}
 
 	sort.Ints(read_access)
 	sort.Ints(write_access)
 
 	d.SetId(fmt.Sprintf("%v", col.Id))
-	if err := d.Set("parent_id", col.ParentId); err != nil {
-		return diag.FromErr(err)
+	if col.ParentId != 0 {
+		if err := d.Set("parent_id", col.ParentId); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 	if err := d.Set("read_access", read_access); err != nil {
 		return diag.FromErr(err)
