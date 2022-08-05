@@ -41,7 +41,6 @@ func resourceCollection() *schema.Resource {
 					Type: schema.TypeInt,
 				},
 				Optional: true,
-				Computed: true,
 			},
 			"write_access": {
 				Description: "List of groups id with write access",
@@ -50,7 +49,6 @@ func resourceCollection() *schema.Resource {
 					Type: schema.TypeInt,
 				},
 				Optional: true,
-				Computed: true,
 			},
 			"color": {
 				Type:     schema.TypeString,
@@ -123,6 +121,13 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 			permissions[fmt.Sprint(write_access[i])] = map[string]string{}
 		}
 		permissions[fmt.Sprint(write_access[i])][d.Id()] = "write"
+	}
+
+	for groupId, _ := range collectionGraph.Groups {
+		if _, found := permissions[groupId]; !found {
+			permissions[groupId] = map[string]string{}
+			permissions[groupId][fmt.Sprint(updated.Id)] = "none"
+		}
 	}
 
 	collectionGraph.Groups = permissions
@@ -232,23 +237,24 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 		if len(permissions[fmt.Sprint(read_access[i])]) == 0 {
 			permissions[fmt.Sprint(read_access[i])] = map[string]string{}
 		}
-		permissions[fmt.Sprint(read_access[i])][d.Id()] = "read"
+		permissions[fmt.Sprint(read_access[i])][fmt.Sprint(created.Id)] = "read"
 	}
 
 	for i := 0; i < len(write_access); i++ {
 		if len(permissions[fmt.Sprint(write_access[i])]) == 0 {
 			permissions[fmt.Sprint(write_access[i])] = map[string]string{}
 		}
-		permissions[fmt.Sprint(write_access[i])][d.Id()] = "write"
+		permissions[fmt.Sprint(write_access[i])][fmt.Sprint(created.Id)] = "write"
 	}
 
+	// Assign the permissions found above
 	collectionGraph.Groups = permissions
 
 	updated, err := c.UpdateCollectionGraph(collectionGraph)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("Error updating collection '%s' permissions", name),
+			Summary:  fmt.Sprintf("Error updating collection '%s' permissions [LAalallalalaLALALALALALALALALALALALALALLAlalalALALALA] %v", name, collectionGraph.Groups),
 			Detail:   "Could not update the collection permissions, unexpected error: " + err.Error(),
 		})
 		return diags
@@ -260,7 +266,7 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	for groupId, permission := range updated.Groups {
 		groupIdInt, _ := strconv.Atoi(groupId)
 
-		if v, found := permission[d.Id()]; found {
+		if v, found := permission[fmt.Sprint(created.Id)]; found {
 			switch v {
 			case "read":
 				updated_read_access = append(updated_read_access, groupIdInt)
