@@ -34,6 +34,12 @@ func resourceCollection() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"default_access": {
+				Description: "Default access for all users",
+				Type:        schema.TypeBool,
+				Default:     false,
+				Optional:    true,
+			},
 			"read_access": {
 				Description: "List of groups id with read access",
 				Type:        schema.TypeList,
@@ -72,6 +78,7 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	id, _ := strconv.Atoi(d.Id())
 	parent_id := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
+	default_access := d.Get("default_access").(bool)
 	read_access := d.Get("read_access").([]interface{})
 	write_access := d.Get("write_access").([]interface{})
 	color := d.Get("color").(string)
@@ -115,7 +122,7 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 		}
 		// Trying to fix the problem, if the group is "2" we don't want to change anything as this group is admin and always have write
 		if read_access[i] == 2 {
-			break
+			continue
 		}
 		permissions[fmt.Sprint(read_access[i])][d.Id()] = "read"
 	}
@@ -125,23 +132,24 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 			permissions[fmt.Sprint(write_access[i])] = map[string]string{}
 		}
 		// Trying to fix the problem, if the group is "2" we don't want to change anything as this group is admin and always have write
-		if read_access[i] == 2 {
-			break
+		if write_access[i] == 2 {
+			continue
 		}
 		permissions[fmt.Sprint(write_access[i])][d.Id()] = "write"
 	}
 
 	for groupId := range collectionGraph.Groups {
+		if groupId == "2" {
+			continue
+		}
 		if _, found := permissions[groupId]; !found {
 			permissions[groupId] = map[string]string{}
 			permissions[groupId][fmt.Sprint(updated.Id)] = "none"
 		}
-		// Admin group always can write
-		// Trying to fix the problem, if the group is "2" we don't want to change anything as this group is admin and always have write
-
-		permissions["2"] = map[string]string{}
-		permissions["2"][fmt.Sprint(updated.Id)] = "write"
 	}
+
+	permissions["1"] = map[string]string{}
+	permissions["1"][fmt.Sprint(updated.Id)] = fmt.Sprintf("%t", default_access)
 
 	collectionGraph.Groups = permissions
 
@@ -247,6 +255,11 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	}
 
 	for i := 0; i < len(read_access); i++ {
+		// Admin Group '2' always have write access, ignore it.
+		if read_access[i] == 2 {
+			continue
+		}
+
 		if len(permissions[fmt.Sprint(read_access[i])]) == 0 {
 			permissions[fmt.Sprint(read_access[i])] = map[string]string{}
 		}
@@ -254,6 +267,11 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	}
 
 	for i := 0; i < len(write_access); i++ {
+		// Admin Group '2' always have write access, ignore it.
+		if write_access[i] == 2 {
+			continue
+		}
+
 		if len(permissions[fmt.Sprint(write_access[i])]) == 0 {
 			permissions[fmt.Sprint(write_access[i])] = map[string]string{}
 		}
@@ -278,6 +296,11 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 
 	for groupId, permission := range updated.Groups {
 		groupIdInt, _ := strconv.Atoi(groupId)
+
+		// Admin Group '2' always have write access, ignore it.
+		if groupIdInt == 2 {
+			continue
+		}
 
 		if v, found := permission[fmt.Sprint(created.Id)]; found {
 			switch v {
@@ -356,6 +379,11 @@ func resourceCollectionRead(_ context.Context, d *schema.ResourceData, meta inte
 	for groupId := range cg.Groups {
 		if v, found := cg.Groups[groupId][d.Id()]; found {
 			groupIdInt, _ := strconv.Atoi(groupId)
+
+			// Admin Group '2' always have write access, ignore it.
+			if groupIdInt == 2 {
+				continue
+			}
 
 			switch v {
 			case "read":
