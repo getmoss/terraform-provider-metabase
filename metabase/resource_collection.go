@@ -187,7 +187,7 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("Error updating collection '%s' permissions LALALALALALALALALALA %v", name, collectionGraph.Groups),
+			Summary:  fmt.Sprintf("Error updating collection '%s'", name),
 			Detail:   "Could not update the collection permissions, unexpected error: " + err.Error(),
 		})
 		return diags

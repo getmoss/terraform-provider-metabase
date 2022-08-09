@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
+	"time"
 )
 
 type CollectionGraph struct {
@@ -44,10 +46,26 @@ func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, err
 		return cg, err
 	}
 	updated := CollectionGraph{}
-	if err := c.sendRequest(req, &updated); err != nil {
-		return cg, err
-	}
 
+	// Sometimes we try to upgrade the graph but the revision is old.
+	// For this cases, wait and retry, fetching the latest revision
+	retries := 5
+	for retries > 0 {
+		if err := c.sendRequest(req, &updated); err != nil {
+			if strings.Contains(err.Error(), "Looks like someone else edited the permissions") {
+				log.Println("[WARNING] Retrying to update the graph increasing the revision number")
+				current, _ := c.GetCollectionGraph()
+				time.Sleep(500 * time.Millisecond)
+				updated.Revision += current.Revision
+				retries -= 1
+			} else {
+				return cg, err
+			}
+		} else {
+			break
+		}
+	}
 	log.Printf("[INFO] Updated collection graph '%+v'", updated)
 	return updated, nil
+
 }
