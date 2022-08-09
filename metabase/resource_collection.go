@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sort"
 	"strconv"
 	"terraform-provider-metabase/client"
 
@@ -36,25 +35,16 @@ func resourceCollection() *schema.Resource {
 			},
 			"default_access": {
 				Description: "Default access for all users",
-				Type:        schema.TypeBool,
-				Default:     false,
+				Type:        schema.TypeString,
+				Default:     "none",
 				Optional:    true,
 			},
-			"read_access": {
-				Description: "List of groups id with read access",
-				Type:        schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeInt,
-				},
+			"permissions": {
+				Type:     schema.TypeMap,
 				Optional: true,
-			},
-			"write_access": {
-				Description: "List of groups id with write access",
-				Type:        schema.TypeList,
 				Elem: &schema.Schema{
-					Type: schema.TypeInt,
+					Type: schema.TypeString,
 				},
-				Optional: true,
 			},
 			"color": {
 				Type:     schema.TypeString,
@@ -78,9 +68,8 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	id, _ := strconv.Atoi(d.Id())
 	parent_id := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
-	default_access := d.Get("default_access").(bool)
-	read_access := d.Get("read_access").([]interface{})
-	write_access := d.Get("write_access").([]interface{})
+	default_access := d.Get("default_access").(string)
+	permissions := d.Get("permissions").(map[string]interface{})
 	color := d.Get("color").(string)
 	archived := d.Get("archived").(bool)
 
@@ -103,9 +92,6 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 		return diags
 	}
 
-	// Update collection graph groups permissions
-	permissions := map[string]map[string]string{}
-
 	collectionGraph, err := c.GetCollectionGraph()
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
@@ -116,42 +102,8 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 		return diags
 	}
 
-	for i := 0; i < len(read_access); i++ {
-		if len(permissions[fmt.Sprint(read_access[i])]) == 0 {
-			permissions[fmt.Sprint(read_access[i])] = map[string]string{}
-		}
-		// Trying to fix the problem, if the group is "2" we don't want to change anything as this group is admin and always have write
-		if read_access[i] == 2 {
-			continue
-		}
-		permissions[fmt.Sprint(read_access[i])][d.Id()] = "read"
-	}
-
-	for i := 0; i < len(write_access); i++ {
-		if len(permissions[fmt.Sprint(write_access[i])]) == 0 {
-			permissions[fmt.Sprint(write_access[i])] = map[string]string{}
-		}
-		// Trying to fix the problem, if the group is "2" we don't want to change anything as this group is admin and always have write
-		if write_access[i] == 2 {
-			continue
-		}
-		permissions[fmt.Sprint(write_access[i])][d.Id()] = "write"
-	}
-
-	for groupId := range collectionGraph.Groups {
-		if groupId == "2" {
-			continue
-		}
-		if _, found := permissions[groupId]; !found {
-			permissions[groupId] = map[string]string{}
-			permissions[groupId][fmt.Sprint(updated.Id)] = "none"
-		}
-	}
-
-	permissions["1"] = map[string]string{}
-	permissions["1"][fmt.Sprint(updated.Id)] = fmt.Sprintf("%t", default_access)
-
-	collectionGraph.Groups = permissions
+	// Assign the permissions found above
+	collectionGraph.Groups = createCollectionPermissions(permissions, fmt.Sprintf("%s", d.Id()), default_access)
 
 	updated_cg, err := c.UpdateCollectionGraph(collectionGraph)
 	if err != nil {
@@ -163,25 +115,6 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 		return diags
 	}
 
-	var updated_read_access []int
-	var updated_write_access []int
-
-	for groupId, permission := range updated_cg.Groups {
-		groupIdInt, _ := strconv.Atoi(groupId)
-
-		if v, found := permission[d.Id()]; found {
-			switch v {
-			case "read":
-				updated_read_access = append(updated_read_access, groupIdInt)
-			case "write":
-				updated_write_access = append(updated_write_access, groupIdInt)
-			}
-		}
-	}
-
-	sort.Ints(updated_read_access)
-	sort.Ints(updated_write_access)
-
 	if updated.ParentId != 0 {
 		if err := d.Set("parent_id", updated.ParentId); err != nil {
 			return diag.FromErr(err)
@@ -190,15 +123,11 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	if err := d.Set("name", updated.Name); err != nil {
 		return diag.FromErr(err)
 	}
-	if len(updated_read_access) != 0 {
-		if err := d.Set("read_access", updated_read_access); err != nil {
-			return diag.FromErr(err)
-		}
+	if err := d.Set("default_access", default_access); err != nil {
+		return diag.FromErr(err)
 	}
-	if len(updated_write_access) != 0 {
-		if err := d.Set("write_access", updated_write_access); err != nil {
-			return diag.FromErr(err)
-		}
+	if err := d.Set("permissions", extractCollectionPermissions(updated_cg.Groups, d.Id())); err != nil {
+		return diag.FromErr(err)
 	}
 	if err := d.Set("color", updated.Color); err != nil {
 		return diag.FromErr(err)
@@ -218,8 +147,8 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 
 	parent_id := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
-	read_access := d.Get("read_access").([]interface{})
-	write_access := d.Get("write_access").([]interface{})
+	default_access := d.Get("default_access").(string)
+	permissions := d.Get("permissions").(map[string]interface{})
 	color := d.Get("color").(string)
 	archived := d.Get("archived").(bool)
 	col := client.Collection{
@@ -240,9 +169,6 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 		return diags
 	}
 
-	// Assign collection graph groups permissions
-	permissions := map[string]map[string]string{}
-
 	// We need to fetch the current collection graph revision
 	collectionGraph, err := c.GetCollectionGraph()
 	if err != nil {
@@ -254,66 +180,18 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 		return diags
 	}
 
-	for i := 0; i < len(read_access); i++ {
-		// Admin Group '2' always have write access, ignore it.
-		if read_access[i] == 2 {
-			continue
-		}
-
-		if len(permissions[fmt.Sprint(read_access[i])]) == 0 {
-			permissions[fmt.Sprint(read_access[i])] = map[string]string{}
-		}
-		permissions[fmt.Sprint(read_access[i])][fmt.Sprint(created.Id)] = "read"
-	}
-
-	for i := 0; i < len(write_access); i++ {
-		// Admin Group '2' always have write access, ignore it.
-		if write_access[i] == 2 {
-			continue
-		}
-
-		if len(permissions[fmt.Sprint(write_access[i])]) == 0 {
-			permissions[fmt.Sprint(write_access[i])] = map[string]string{}
-		}
-		permissions[fmt.Sprint(write_access[i])][fmt.Sprint(created.Id)] = "write"
-	}
-
 	// Assign the permissions found above
-	collectionGraph.Groups = permissions
+	collectionGraph.Groups = createCollectionPermissions(permissions, fmt.Sprintf("%v", created.Id), default_access)
 
 	updated, err := c.UpdateCollectionGraph(collectionGraph)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("Error updating collection '%s' permissions [LAalallalalaLALALALALALALALALALALALALALLAlalalALALALA] %v", name, collectionGraph.Groups),
+			Summary:  fmt.Sprintf("Error updating collection '%s' permissions LALALALALALALALALALA %v", name, collectionGraph.Groups),
 			Detail:   "Could not update the collection permissions, unexpected error: " + err.Error(),
 		})
 		return diags
 	}
-
-	var updated_read_access []int
-	var updated_write_access []int
-
-	for groupId, permission := range updated.Groups {
-		groupIdInt, _ := strconv.Atoi(groupId)
-
-		// Admin Group '2' always have write access, ignore it.
-		if groupIdInt == 2 {
-			continue
-		}
-
-		if v, found := permission[fmt.Sprint(created.Id)]; found {
-			switch v {
-			case "read":
-				updated_read_access = append(updated_read_access, groupIdInt)
-			case "write":
-				updated_write_access = append(updated_write_access, groupIdInt)
-			}
-		}
-	}
-
-	sort.Ints(updated_read_access)
-	sort.Ints(updated_write_access)
 
 	d.SetId(fmt.Sprint(created.Id))
 	if col.ParentId != 0 {
@@ -324,10 +202,7 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	if err := d.Set("name", created.Name); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("read_access", updated_read_access); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("write_access", updated_write_access); err != nil {
+	if err := d.Set("permissions", extractCollectionPermissions(updated.Groups, d.Id())); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("color", created.Color); err != nil {
@@ -373,46 +248,14 @@ func resourceCollectionRead(_ context.Context, d *schema.ResourceData, meta inte
 		return diags
 	}
 
-	var read_access []int
-	var write_access []int
-
-	for groupId := range cg.Groups {
-		if v, found := cg.Groups[groupId][d.Id()]; found {
-			groupIdInt, _ := strconv.Atoi(groupId)
-
-			// Admin Group '2' always have write access, ignore it.
-			if groupIdInt == 2 {
-				continue
-			}
-
-			switch v {
-			case "read":
-				read_access = append(read_access, groupIdInt)
-			case "write":
-				write_access = append(write_access, groupIdInt)
-			}
-		}
-
-	}
-
-	sort.Ints(read_access)
-	sort.Ints(write_access)
-
 	d.SetId(fmt.Sprintf("%v", col.Id))
 	if col.ParentId != 0 {
 		if err := d.Set("parent_id", col.ParentId); err != nil {
 			return diag.FromErr(err)
 		}
 	}
-	if len(read_access) != 0 {
-		if err := d.Set("read_access", read_access); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-	if len(write_access) != 0 {
-		if err := d.Set("write_access", write_access); err != nil {
-			return diag.FromErr(err)
-		}
+	if err := d.Set("permissions", extractCollectionPermissions(cg.Groups, fmt.Sprintf("%v", col.Id))); err != nil {
+		return diag.FromErr(err)
 	}
 	if err := d.Set("name", col.Name); err != nil {
 		return diag.FromErr(err)
@@ -462,4 +305,41 @@ func resourceCollectionArchive(_ context.Context, d *schema.ResourceData, meta i
 	d.SetId("")
 
 	return diags
+}
+
+func extractCollectionPermissions(cgGroups map[string]map[string]string, collectionId string) map[string]string {
+	permissions := make(map[string]string)
+	for groupId := range cgGroups {
+		// Skip the Admin Group because it always have write permission
+		if groupId == "2" {
+			continue
+		}
+		if v, found := cgGroups[groupId][collectionId]; found {
+			switch v {
+			case "none":
+				permissions[groupId] = "none"
+			case "read":
+				permissions[groupId] = "read"
+			case "write":
+				permissions[groupId] = "write"
+			}
+		}
+	}
+	return permissions
+}
+
+func createCollectionPermissions(p map[string]interface{}, collectionId string, defaultAccess string) map[string]map[string]string {
+	permissions := make(map[string]map[string]string)
+	for groupId, access := range p {
+		// Skip the Admin Group because it always have write permission
+		if groupId == "1" || groupId == "2" {
+			continue
+		}
+		permissions[groupId] = map[string]string{}
+		permissions[groupId][collectionId] = access.(string)
+	}
+	permissions["1"] = map[string]string{}
+	permissions["1"][collectionId] = defaultAccess
+
+	return permissions
 }
