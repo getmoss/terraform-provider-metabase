@@ -50,22 +50,20 @@ func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, err
 	// Sometimes we try to upgrade the graph but the revision is old.
 	// For this cases, wait and retry, fetching the latest revision
 	retries := 5
+
 	for retries > 0 {
 		if err := c.sendRequest(req, &updated); err != nil {
-			if strings.Contains(err.Error(), "Looks like someone else edited the permissions") {
-				log.Println("[WARNING] Retrying to update the graph increasing the revision number")
-				current, _ := c.GetCollectionGraph()
-				time.Sleep(500 * time.Millisecond)
-				updated.Revision += current.Revision
+			if strings.Contains(err.Error(), "collection_revision_pkey") {
+				log.Println("[ERROR] DANDNDNDNDNDNDNDNDNDNDNND")
 				retries -= 1
-			} else {
-				return cg, err
+				time.Sleep(1500 * time.Millisecond)
+				cg, _ := c.GetCollectionGraph()
+				updated.Revision = cg.Revision
 			}
-		} else {
 			break
+		} else {
+			return updated, nil
 		}
 	}
-	log.Printf("[INFO] Updated collection graph '%+v'", updated)
-	return updated, nil
-
+	return cg, err
 }
