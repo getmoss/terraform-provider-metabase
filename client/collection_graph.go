@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -34,7 +35,7 @@ func (c *Client) GetCollectionGraph() (CollectionGraph, error) {
 func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, error) {
 	url := fmt.Sprintf("%s/api/collection/graph", c.BaseURL)
 
-	retries := 5
+	retries := 10
 	updated := CollectionGraph{}
 	var err_rr error
 	for retries >= 0 {
@@ -54,7 +55,8 @@ func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, err
 		}
 		if err := c.sendRequest(req, &updated); err != nil {
 			if strings.Contains(err.Error(), "collection_revision_pkey") || strings.Contains(err.Error(), "status code: 409") {
-				time.Sleep(1500 * time.Millisecond)
+				log.Printf("[ERROR] There were an error with the collection graph, retries left %d.", retries)
+				time.Sleep(time.Duration(rand.Float32()*2) * time.Second)
 				retries -= 1
 			} else {
 				err_rr = err
