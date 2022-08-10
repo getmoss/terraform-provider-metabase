@@ -20,7 +20,6 @@ type Client struct {
 	users            *Users
 	permissionGroups *PermissionGroups
 	collections      *Collections
-	collectionGraph  *CollectionGraph
 }
 
 type LoginDetails struct {
