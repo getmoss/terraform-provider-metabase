@@ -16,9 +16,9 @@ type CollectionGraph struct {
 }
 
 func (c *Client) GetCollectionGraph() (CollectionGraph, error) {
-	if c.collectionGraph != nil {
-		return *c.collectionGraph, nil
-	}
+	// if c.collectionGraph != nil {
+	// 	return *c.collectionGraph, nil
+	// }
 	url := fmt.Sprintf("%s/api/collection/graph", c.BaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 
@@ -31,39 +31,46 @@ func (c *Client) GetCollectionGraph() (CollectionGraph, error) {
 	}
 
 	log.Printf("[DEBUG] Got collection graph '%+v'", collectionGraph)
-	c.collectionGraph = &collectionGraph
+	//c.collectionGraph = &collectionGraph
 	return collectionGraph, nil
 }
 
 func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, error) {
 	url := fmt.Sprintf("%s/api/collection/graph", c.BaseURL)
 
-	b := new(bytes.Buffer)
-	_ = json.NewEncoder(b).Encode(cg)
-	req, err := http.NewRequest(http.MethodPut, url, b)
-	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		return cg, err
-	}
-	updated := CollectionGraph{}
-
-	// Sometimes we try to upgrade the graph but the revision is old.
-	// For this cases, wait and retry, fetching the latest revision
 	retries := 5
+	updated := CollectionGraph{}
+	var err_rr error
+	for retries >= 0 {
+		current_cg, err := c.GetCollectionGraph()
+		if err != nil {
+			return cg, err
+		}
 
-	for retries > 0 {
-		if err := c.sendRequest(req, &updated); err != nil {
-			if strings.Contains(err.Error(), "collection_revision_pkey") {
-				log.Println("[ERROR] DANDNDNDNDNDNDNDNDNDNDNND")
-				retries -= 1
-				time.Sleep(1500 * time.Millisecond)
-				cg, _ := c.GetCollectionGraph()
-				updated.Revision = cg.Revision
-			}
+		cg.Revision = current_cg.Revision
+		b := new(bytes.Buffer)
+		_ = json.NewEncoder(b).Encode(cg)
+		req, err := http.NewRequest(http.MethodPut, url, b)
+		req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			err_rr = err
 			break
+		}
+		if retries == 0 {
+			err_rr = err
+			break
+		}
+		if err := c.sendRequest(req, &updated); err != nil {
+			if strings.Contains(err.Error(), "collection_revision_pkey") || strings.Contains(err.Error(), "status code: 409") {
+				time.Sleep(1500 * time.Millisecond)
+				retries -= 1
+			} else {
+				err_rr = err
+				break
+			}
 		} else {
 			return updated, nil
 		}
 	}
-	return cg, err
+	return cg, err_rr
 }

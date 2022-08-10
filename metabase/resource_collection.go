@@ -92,7 +92,7 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 		return diags
 	}
 
-	collectionGraph, err := c.GetCollectionGraph()
+	collectionGraph := client.CollectionGraph{}
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -103,7 +103,7 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	}
 
 	// Assign the permissions found above
-	collectionGraph.Groups = createCollectionPermissions(permissions, fmt.Sprintf("%s", d.Id()), default_access)
+	collectionGraph.Groups = createCollectionPermissions(permissions, fmt.Sprintf("%d", updated.Id), default_access)
 
 	updated_cg, err := c.UpdateCollectionGraph(collectionGraph)
 	if err != nil {
@@ -187,7 +187,7 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("Error updating collection '%s'", name),
+			Summary:  fmt.Sprintf("Error updating collection '%s' permissions LALALALALALALALALALA %v", name, collectionGraph.Groups),
 			Detail:   "Could not update the collection permissions, unexpected error: " + err.Error(),
 		})
 		return diags
