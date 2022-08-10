@@ -16,9 +16,6 @@ type CollectionGraph struct {
 }
 
 func (c *Client) GetCollectionGraph() (CollectionGraph, error) {
-	// if c.collectionGraph != nil {
-	// 	return *c.collectionGraph, nil
-	// }
 	url := fmt.Sprintf("%s/api/collection/graph", c.BaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 
@@ -31,7 +28,6 @@ func (c *Client) GetCollectionGraph() (CollectionGraph, error) {
 	}
 
 	log.Printf("[DEBUG] Got collection graph '%+v'", collectionGraph)
-	//c.collectionGraph = &collectionGraph
 	return collectionGraph, nil
 }
 
@@ -53,10 +49,6 @@ func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, err
 		req, err := http.NewRequest(http.MethodPut, url, b)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
-			err_rr = err
-			break
-		}
-		if retries == 0 {
 			err_rr = err
 			break
 		}

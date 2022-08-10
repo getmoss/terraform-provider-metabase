@@ -187,7 +187,7 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("Error updating collection '%s' permissions LALALALALALALALALALA %v", name, collectionGraph.Groups),
+			Summary:  fmt.Sprintf("Error updating collection '%s'", name),
 			Detail:   "Could not update the collection permissions, unexpected error: " + err.Error(),
 		})
 		return diags
@@ -310,8 +310,8 @@ func resourceCollectionArchive(_ context.Context, d *schema.ResourceData, meta i
 func extractCollectionPermissions(cgGroups map[string]map[string]string, collectionId string) map[string]string {
 	permissions := make(map[string]string)
 	for groupId := range cgGroups {
-		// Skip the Admin Group because it always have write permission
-		if groupId == "2" {
+		// Skip All Users group and & Admin group as settings permissions here is different
+		if groupId == "1" || groupId == "2" {
 			continue
 		}
 		if v, found := cgGroups[groupId][collectionId]; found {
@@ -331,7 +331,7 @@ func extractCollectionPermissions(cgGroups map[string]map[string]string, collect
 func createCollectionPermissions(p map[string]interface{}, collectionId string, defaultAccess string) map[string]map[string]string {
 	permissions := make(map[string]map[string]string)
 	for groupId, access := range p {
-		// Skip the Admin Group because it always have write permission
+		// Skip All Users group and & Admin group as settings permissions here is different
 		if groupId == "1" || groupId == "2" {
 			continue
 		}
