@@ -24,8 +24,14 @@ resource "metabase_collection" "my_first_collection" {
 
 ### Required
 
-- `color` (String)
 - `name` (String) Collection name
+
+### Optional
+
+- `color` (String)
+- `default_access` (String) Default access for all users
+- `parent_id` (Number) Parent collection id
+- `permissions` (Map of String)
 
 ### Read-Only
 

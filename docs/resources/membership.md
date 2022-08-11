@@ -34,15 +34,12 @@ resource "metabase_membership" "example" {
 
 ### Required
 
-- **group_id** (Number)
-- **user_id** (Number)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `group_id` (Number)
+- `user_id` (Number)
 
 ### Read-Only
 
-- **membership_id** (Number)
+- `id` (String) The ID of this resource.
+- `membership_id` (Number)
 
 
