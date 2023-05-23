@@ -107,7 +107,7 @@ func resourceMembershipRead(ctx context.Context, d *schema.ResourceData, meta in
 	if err := d.Set("membership_id", m.MembershipId); err != nil {
 		return diag.FromErr(err)
 	}
-	expirationDateStr, ok := d.GetOk("expiration_date")
+	expirationDateStr, ok := d.GetOk("expiration")
 	if ok {
 		expirationDate, err := time.Parse(time.RFC3339, expirationDateStr.(string))
 		if err != nil {
