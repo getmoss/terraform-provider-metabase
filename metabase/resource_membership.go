@@ -38,7 +38,7 @@ func resourceMembership() *schema.Resource {
 			"expiration": {
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: false,
+				ForceNew: true,
 			},
 		},
 	}
