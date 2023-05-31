@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -15,6 +16,7 @@ type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
 
+	mu               sync.Mutex
 	sessionId        string
 	userAgent        string
 	users            *Users

@@ -33,24 +33,27 @@ func (c *Client) GetCollectionGraph() (CollectionGraph, error) {
 }
 
 func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, error) {
+	c.mu.Lock() // Lock the client to prevent concurrent updates as the whole graph has to be updated each time.
+
+	defer c.mu.Unlock() // Unlock the client when the function returns
 	url := fmt.Sprintf("%s/api/collection/graph", c.BaseURL)
 
 	retries := 10
 	updated := CollectionGraph{}
-	var err_rr error
+	var err_ret error
 	for retries >= 0 {
 		currentCG, err := c.GetCollectionGraph()
 		if err != nil {
 			return cg, err
 		}
-
-		cg.Revision = current_cg.Revision
+		// Update the revision which is incremented +1 by the server everytime the graph is updated
+		cg.Revision = currentCG.Revision
 		b := new(bytes.Buffer)
 		_ = json.NewEncoder(b).Encode(cg)
 		req, err := http.NewRequest(http.MethodPut, url, b)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
-			err_rr = err
+			err_ret = err
 			break
 		}
 		if err := c.sendRequest(req, &updated); err != nil {
@@ -59,12 +62,12 @@ func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, err
 				time.Sleep(time.Duration(rand.Float32()*2) * time.Second)
 				retries -= 1
 			} else {
-				err_rr = err
+				err_ret = err
 				break
 			}
 		} else {
 			return updated, nil
 		}
 	}
-	return cg, err_rr
+	return cg, err_ret
 }

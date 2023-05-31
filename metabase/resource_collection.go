@@ -75,7 +75,7 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 
 	col := client.Collection{
 		Id:       id,
-		ParentId: parent_id,
+		ParentId: parentId,
 		Name:     name,
 		Color:    color,
 		Archived: archived,
@@ -103,7 +103,7 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	}
 
 	// Assign the permissions found above
-	collectionGraph.Groups = createCollectionPermissions(permissions, fmt.Sprintf("%d", updated.Id), default_access)
+	collectionGraph.Groups = createCollectionPermissions(permissions, fmt.Sprintf("%d", updated.Id), defaultAccess)
 
 	updatedCG, err := c.UpdateCollectionGraph(collectionGraph)
 	if err != nil {
@@ -123,10 +123,10 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	if err := d.Set("name", updated.Name); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("default_access", default_access); err != nil {
+	if err := d.Set("default_access", defaultAccess); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("permissions", extractCollectionPermissions(updated_cg.Groups, d.Id())); err != nil {
+	if err := d.Set("permissions", extractCollectionPermissions(updatedCG.Groups, d.Id())); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("color", updated.Color); err != nil {
@@ -145,14 +145,14 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	parent_id := d.Get("parent_id").(int)
+	parentId := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
-	default_access := d.Get("default_access").(string)
+	defaultAccess := d.Get("default_access").(string)
 	permissions := d.Get("permissions").(map[string]interface{})
 	color := d.Get("color").(string)
 	archived := d.Get("archived").(bool)
 	col := client.Collection{
-		ParentId: parent_id,
+		ParentId: parentId,
 		Name:     name,
 		Color:    color,
 		Archived: archived,
@@ -181,7 +181,7 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	}
 
 	// Assign the permissions found above
-	collectionGraph.Groups = createCollectionPermissions(permissions, fmt.Sprintf("%v", created.Id), default_access)
+	collectionGraph.Groups = createCollectionPermissions(permissions, fmt.Sprintf("%v", created.Id), defaultAccess)
 
 	updated, err := c.UpdateCollectionGraph(collectionGraph)
 	if err != nil {
