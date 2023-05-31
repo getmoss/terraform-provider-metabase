@@ -39,7 +39,7 @@ func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, err
 	updated := CollectionGraph{}
 	var err_rr error
 	for retries >= 0 {
-		current_cg, err := c.GetCollectionGraph()
+		currentCG, err := c.GetCollectionGraph()
 		if err != nil {
 			return cg, err
 		}
