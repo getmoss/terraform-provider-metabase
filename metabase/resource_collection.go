@@ -66,9 +66,9 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	var diags diag.Diagnostics
 
 	id, _ := strconv.Atoi(d.Id())
-	parent_id := d.Get("parent_id").(int)
+	parentId := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
-	default_access := d.Get("default_access").(string)
+	defaultAccess := d.Get("default_access").(string)
 	permissions := d.Get("permissions").(map[string]interface{})
 	color := d.Get("color").(string)
 	archived := d.Get("archived").(bool)
