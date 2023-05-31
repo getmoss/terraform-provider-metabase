@@ -105,7 +105,7 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	// Assign the permissions found above
 	collectionGraph.Groups = createCollectionPermissions(permissions, fmt.Sprintf("%d", updated.Id), default_access)
 
-	updated_cg, err := c.UpdateCollectionGraph(collectionGraph)
+	updatedCG, err := c.UpdateCollectionGraph(collectionGraph)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
