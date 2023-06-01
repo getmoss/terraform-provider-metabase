@@ -126,7 +126,7 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	if err := d.Set("default_access", defaultAccess); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("permissions", extractCollectionPermissions(updatedCG.Groups, d.Id())); err != nil {
+	if err := d.Set("permissions", extractCollectionPermissions(updatedCG.Groups, d.Id(), false)); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("color", updated.Color); err != nil {
@@ -202,7 +202,7 @@ func resourceCollectionCreate(_ context.Context, d *schema.ResourceData, meta in
 	if err := d.Set("name", created.Name); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("permissions", extractCollectionPermissions(updated.Groups, d.Id())); err != nil {
+	if err := d.Set("permissions", extractCollectionPermissions(updated.Groups, d.Id(), false)); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("color", created.Color); err != nil {
@@ -254,7 +254,7 @@ func resourceCollectionRead(_ context.Context, d *schema.ResourceData, meta inte
 			return diag.FromErr(err)
 		}
 	}
-	if err := d.Set("permissions", extractCollectionPermissions(cg.Groups, fmt.Sprintf("%v", col.Id))); err != nil {
+	if err := d.Set("permissions", extractCollectionPermissions(cg.Groups, fmt.Sprintf("%v", col.Id), true)); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("name", col.Name); err != nil {
@@ -307,7 +307,7 @@ func resourceCollectionArchive(_ context.Context, d *schema.ResourceData, meta i
 	return diags
 }
 
-func extractCollectionPermissions(cgGroups map[string]map[string]string, collectionId string) map[string]string {
+func extractCollectionPermissions(cgGroups map[string]map[string]string, collectionId string, skipNone bool) map[string]string {
 	permissions := make(map[string]string)
 	for groupId := range cgGroups {
 		// Skip All Users group and & Admin group as settings permissions here is different
@@ -317,7 +317,12 @@ func extractCollectionPermissions(cgGroups map[string]map[string]string, collect
 		if v, found := cgGroups[groupId][collectionId]; found {
 			switch v {
 			case "none":
-				permissions[groupId] = "none"
+        // the state does not maintain the "none" permission it only maintains the "read" and "write" for groups added
+        // explicitly to the collection permissions attribute. It doesn't store state for ALL groups in the metabase instance.
+        // if we don't do this it will always try to update in place for every terraform apply.
+				if !skipNone {
+					permissions[groupId] = "none"
+				}
 			case "read":
 				permissions[groupId] = "read"
 			case "write":
