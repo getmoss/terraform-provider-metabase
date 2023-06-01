@@ -58,7 +58,14 @@ func resourceCollection() *schema.Resource {
 		},
 	}
 }
-
+func setRemovedPermissionsToNone(oldPermissions, newPermissions map[string]interface{}) map[string]interface{} {
+	for key := range oldPermissions {
+		if _, ok := newPermissions[key]; !ok {
+			newPermissions[key] = "none"
+		}
+	}
+	return newPermissions
+}
 func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	c := meta.(*client.Client)
 
@@ -69,7 +76,11 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	parentId := d.Get("parent_id").(int)
 	name := d.Get("name").(string)
 	defaultAccess := d.Get("default_access").(string)
-	permissions := d.Get("permissions").(map[string]interface{})
+  oldPermission, newPermission := d.GetChange("permissions")
+  permissions := newPermission.(map[string]interface{})
+  oldPermissions := oldPermission.(map[string]interface{})
+  permissions = setRemovedPermissionsToNone(oldPermissions, permissions)
+
 	color := d.Get("color").(string)
 	archived := d.Get("archived").(bool)
 
@@ -126,7 +137,7 @@ func resourceCollectionUpdate(_ context.Context, d *schema.ResourceData, meta in
 	if err := d.Set("default_access", defaultAccess); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("permissions", extractCollectionPermissions(updatedCG.Groups, d.Id(), false)); err != nil {
+	if err := d.Set("permissions", extractCollectionPermissions(updatedCG.Groups, d.Id(), true)); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("color", updated.Color); err != nil {
