@@ -12,11 +12,12 @@ import (
 	"time"
 )
 
+var mu sync.Mutex
+
 type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
 
-	mu               sync.Mutex
 	sessionId        string
 	userAgent        string
 	users            *Users

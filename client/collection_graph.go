@@ -33,9 +33,9 @@ func (c *Client) GetCollectionGraph() (CollectionGraph, error) {
 }
 
 func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, error) {
-	c.mu.Lock() // Lock the client to prevent concurrent updates as the whole graph has to be updated each time.
+	mu.Lock() // Lock the client to prevent concurrent updates as the whole graph has to be updated each time.
 
-	defer c.mu.Unlock() // Unlock the client when the function returns
+	defer mu.Unlock() // Unlock the client when the function returns
 	url := fmt.Sprintf("%s/api/collection/graph", c.BaseURL)
 
 	retries := 10
