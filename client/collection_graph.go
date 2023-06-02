@@ -41,6 +41,7 @@ func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, err
 	retries := 10
 	updated := CollectionGraph{}
 	var err_ret error
+  backoff := rand.Float32()
 	for retries >= 0 {
 		currentCG, err := c.GetCollectionGraph()
 		if err != nil {
@@ -59,7 +60,8 @@ func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, err
 		if err := c.sendRequest(req, &updated); err != nil {
 			if strings.Contains(err.Error(), "collection_revision_pkey") || strings.Contains(err.Error(), "status code: 409") {
 				log.Printf("[ERROR] There were an error with the collection graph, retries left %d.", retries)
-				time.Sleep(time.Duration(rand.Float32()*2) * time.Second)
+				time.Sleep(time.Duration(backoff) * time.Second)
+        backoff = backoff * 2
 				retries -= 1
 			} else {
 				err_ret = err
