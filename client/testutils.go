@@ -21,10 +21,9 @@ func server(url string, httpMethod string, expected interface{}) *httptest.Serve
 	return svr
 }
 
-func graphServer() *httptest.Server {
+func graphUpdateMockServer() *httptest.Server {
 	mux := http.NewServeMux()
 
-	// Maintain an in-memory CollectionGraph that starts with a default value
 	cg := CollectionGraph{
 		Revision: 1,
 		Groups: map[string]map[string]string{
@@ -57,7 +56,9 @@ func graphServer() *httptest.Server {
 				return
 			}
 			cg = newCg
+			cg.Revision++
 			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(cg)
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 		}

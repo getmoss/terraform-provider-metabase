@@ -55,7 +55,7 @@ func TestUpdateCollectionGraph(t *testing.T) {
 			},
 		}
 
-		svr := graphServer()
+		svr := graphUpdateMockServer()
 		defer svr.Close()
 
 		c := Client{
@@ -63,13 +63,11 @@ func TestUpdateCollectionGraph(t *testing.T) {
 			HTTPClient: &http.Client{},
 		}
 
-		// Update the graph
 		_, err := c.UpdateCollectionGraph(updatedExpected)
 		if err != nil {
 			t.Fatalf("Failed to update collection graph: %v", err)
 		}
 
-		// Get the graph after update
 		actualUpdatedCG, err := c.GetCollectionGraph()
 		if err != nil {
 			t.Fatalf("Failed to get collection graph: %v", err)
