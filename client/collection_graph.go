@@ -38,7 +38,7 @@ func (c *Client) UpdateCollectionGraph(cg CollectionGraph) (CollectionGraph, err
 	defer mu.Unlock() // Unlock the client when the function returns
 	url := fmt.Sprintf("%s/api/collection/graph", c.BaseURL)
 
-	retries := 10
+	retries := 7 // limits the max backoff to 128 seconds
 	updated := CollectionGraph{}
 	var err_ret error
   backoff := rand.Float32()
