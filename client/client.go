@@ -8,8 +8,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var mu sync.Mutex
 
 type Client struct {
 	BaseURL    string

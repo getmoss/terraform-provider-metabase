@@ -23,14 +23,11 @@ data "metabase_permission_group" "read_example" {
 
 ### Required
 
-- **name** (String) Group Name
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `name` (String) Group Name
 
 ### Read-Only
 
-- **group_id** (Number) Group Id
+- `group_id` (Number) Group Id
+- `id` (String) The ID of this resource.
 
 

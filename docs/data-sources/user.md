@@ -23,16 +23,13 @@ data "metabase_user" "user" {
 
 ### Required
 
-- **email** (String) User email address
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `email` (String) User email address
 
 ### Read-Only
 
-- **first_name** (String)
-- **last_name** (String)
-- **user_id** (Number)
+- `first_name` (String)
+- `id` (String) The ID of this resource.
+- `last_name` (String)
+- `user_id` (Number)
 
 

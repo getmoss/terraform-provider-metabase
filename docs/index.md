@@ -29,10 +29,10 @@ provider "metabase" {
 
 ### Required
 
-- **host** (String) Hostname with protocol http/https
-- **password** (String, Sensitive) User password
-- **username** (String, Sensitive) User email of a super admin
+- `host` (String) Hostname with protocol http/https
+- `password` (String, Sensitive) User password
+- `username` (String, Sensitive) User email of a super admin
 
 ### Optional
 
-- **session_id** (String, Sensitive) Session ID
+- `session_id` (String, Sensitive) Session ID

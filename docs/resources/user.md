@@ -25,16 +25,13 @@ resource "metabase_user" "example" {
 
 ### Required
 
-- **email** (String)
-- **first_name** (String)
-- **last_name** (String)
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `email` (String)
+- `first_name` (String)
+- `last_name` (String)
 
 ### Read-Only
 
-- **user_id** (Number)
+- `id` (String) The ID of this resource.
+- `user_id` (Number)
 
 
