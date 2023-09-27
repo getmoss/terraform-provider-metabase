@@ -98,7 +98,7 @@ func TestUser(t *testing.T) {
 			LastName:  "Doe",
 		}
 		httpMethod := http.MethodPut
-		svr := server("/api/user", httpMethod, expected)
+		svr := server("/api/user/1", httpMethod, expected)
 		defer svr.Close()
 
 		c := Client{
