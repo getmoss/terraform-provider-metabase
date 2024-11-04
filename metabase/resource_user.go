@@ -61,7 +61,7 @@ func resourceUserUpdate(_ context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	// Update the user
-	updated, err := c.UpdateUser(u)
+	updated, err := c.UpdateUser(u, userId)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
