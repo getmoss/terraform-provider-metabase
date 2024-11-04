@@ -71,8 +71,8 @@ func (c *Client) CreateUser(u User) (User, error) {
 	return created, nil
 }
 
-func (c *Client) UpdateUser(u User) (User, error) {
-	url := fmt.Sprintf("%s/api/user", c.BaseURL)
+func (c *Client) UpdateUser(u User, id int) (User, error) {
+	url := fmt.Sprintf("%s/api/user/%d", c.BaseURL, id)
 	b := new(bytes.Buffer)
 	_ = json.NewEncoder(b).Encode(u)
 	req, err := http.NewRequest(http.MethodPut, url, b)

@@ -106,7 +106,7 @@ func TestUser(t *testing.T) {
 			HTTPClient: &http.Client{},
 		}
 
-		us, err := c.UpdateUser(userToBeUpdated)
+		us, err := c.UpdateUser(userToBeUpdated, 1)
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, us)
