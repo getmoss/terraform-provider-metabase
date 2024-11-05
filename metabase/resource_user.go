@@ -71,7 +71,7 @@ func resourceUserUpdate(_ context.Context, d *schema.ResourceData, meta interfac
 		return diags
 	}
 
-	d.SetId(strconv.Itoa(updated.Id))
+	d.SetId(updated.Email)
 	if err := d.Set("first_name", updated.FirstName); err != nil {
 		return diag.FromErr(err)
 	}
