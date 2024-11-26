@@ -4,12 +4,12 @@ on:
     paths-ignore:
       - '**.md'
 
+concurrency:
+  group: branch
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
-    concurrency:
-      group: branch
-      cancel-in-progress: true
     timeout-minutes: 5
     steps:
 
