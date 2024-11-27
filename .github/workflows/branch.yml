@@ -4,6 +4,9 @@ on:
     paths-ignore:
       - '**.md'
 
+concurrency:
+  group: branch
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
