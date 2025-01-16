@@ -18,6 +18,7 @@ jobs:
     name: semgrep/ci 
     # If you are self-hosting, change the following `runs-on` value: 
     runs-on: ubuntu-latest
+    timeout-minutes: 120
 
     container:
       # A Docker image with Semgrep installed. Do not change this.
