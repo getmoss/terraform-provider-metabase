@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"terraform-provider-metabase/client"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,6 +33,11 @@ func resourceMembership() *schema.Resource {
 			"group_id": {
 				Type:     schema.TypeInt,
 				Required: true,
+				ForceNew: true,
+			},
+			"expiration": {
+				Type:     schema.TypeString,
+				Optional: true,
 				ForceNew: true,
 			},
 		},
@@ -75,7 +81,7 @@ func resourceMembershipCreate(_ context.Context, d *schema.ResourceData, meta in
 	return
 }
 
-func resourceMembershipRead(_ context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
+func resourceMembershipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	membershipId, _ := strconv.Atoi(d.Id())
 
 	c := meta.(*client.Client)
@@ -101,7 +107,19 @@ func resourceMembershipRead(_ context.Context, d *schema.ResourceData, meta inte
 	if err := d.Set("membership_id", m.MembershipId); err != nil {
 		return diag.FromErr(err)
 	}
-
+	expirationDateStr, ok := d.GetOk("expiration")
+	if ok {
+		expirationDate, err := time.Parse(time.RFC3339, expirationDateStr.(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if time.Now().After(expirationDate) {
+			if diags := resourceMembershipDelete(ctx, d, meta); diags.HasError() {
+				return diags
+			}
+			d.SetId("")
+		}
+	}
 	return
 }
 
